@@ -14,7 +14,7 @@
 #	  The Parent of the exon is the transcript designated in the Derives_from attribute.
 #
 import sys
-import lib.gff3 as gff3
+import gff3
 
 seenIds = set()
 tCounts = {}
@@ -31,14 +31,16 @@ for f in gff3.iterate( sys.stdin ):
 
     if f[0].startswith('chr'):
 	f[0] = f[0][3:]
-    f[1] = "miRNA"
+    f[1] = "miRBase"
 
     if f[2] == "miRNA_primary_transcript":
 	#
 	# Gene feature
 	#
 	f[2] = 'gene'	# 
+	f.attributes["curie"] = "miRBase:" + f.ID
 	sys.stdout.write(str(f))
+	f.attributes.pop("curie", None)
 	#
 	# Transcript feature
 	#

@@ -1,5 +1,9 @@
 #!/usr/bin/bash
 
+dir=$(pwd)
+PYTHONPATH=${dir}/lib:${PYTHONPATH:-.}
+export PYTHONPATH
+
 PYTHON=python
 CURL=curl
 CP=cp
@@ -10,18 +14,29 @@ GREP=grep
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 BIN=${DIR}
-WORKINGDIR=${DIR}/../output
+WORKINGDIR=${DIR}/../work
 
 DATADIR=${DIR}/../data
 #DATADIR=/data/research/mouse_build_38_external/original_annotations
 
+SORTCMD='sort -k 1,1 -k 4n,4n -k 5nr,5nr'
+SPLIT="${PYTHON} ${BIN}/splitGff.py -d ${WORKINGDIR}"
+
+########
+# MGI
+#${PYTHON} ${BIN}/prepMgi.py | ${SORTCMD} | ${SPLIT} -t "mgi.chr%s.gff" 
+
+########
+# MGI computed
+#${PYTHON} ${BIN}/prepMgiComputed.py > ${WORKINGDIR}/mgi.gff3
+
 ########
 # NCBI
-#${PYTHON} ${BIN}/convertNCBI.py ${DATADIR}/ref_GRCm38.p4_top_level.gff3 > ${WORKINGDIR}/ncbi.gff3
+#${PYTHON} ${BIN}/prepNcbi.py < ${DATADIR}/ref_GRCm38.p4_top_level.gff3 | ${SPLIT} -t "ncbi.chr%s.gff"
 
 ########
 # miRBase
-${PYTHON} ${BIN}/convertMirbase.py < ${DATADIR}/miRBase21_mmu.gff3 > ${WORKINGDIR}/mirbase.gff3
+#${PYTHON} ${BIN}/prepMirbase.py < ${DATADIR}/miRBase21_mmu.gff3 | ${SPLIT} -t "mirbase.chr%s.gff"
 
 ########
 # ENSEMBL
@@ -30,6 +45,13 @@ ENSEMBLfile=Mus_musculus.GRCm38.${ENSEMBLver}.gff3
 ENSEMBLurl=ftp://ftp.ensembl.org/pub/release-${ENSEMBLver}/gff3/mus_musculus/${ENSEMBLfile}.gz
 #
 #${CURL} ${ENSEMBLurl} | ${GUNZIP} > ${DATADIR}/${ENSEMBLfile}
-#${GREP} -v biological_region ${DATADIR}/${ENSEMBLfile} > ${WORKINGDIR}/ensembl.gff3
+#${PYTHON} ${BIN}/prepEnsembl.py < ${DATADIR}/${ENSEMBLfile} | ${SPLIT} -t "ensembl.chr%s.gff"
 
 ########
+
+chrs=( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 X Y MT )
+for i in "${chrs[@]}"
+do : 
+    # do whatever on $i
+    ${PYTHON} ${BIN}/mergeGffs.py ${WORKINGDIR}/*chr${i}.gff > ${WORKINGDIR}/chr${i}.gff
+done

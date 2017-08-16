@@ -60,6 +60,7 @@
 #
 #----------------------------------------------------
 import sys
+import os
 import types
 import urllib
 import re
@@ -203,6 +204,24 @@ class Feature(types.ListType):
     
     def __str__(self):
 	return format(self)
+    #
+    def overlaps( self, f ):
+        return self.seqid == f.seqid and self.end >= f.start and self.start <= f.end
+
+#----------------------------------------------------
+# 
+# flattenModel
+#
+def flattenModel(r):
+  m = []
+  wrk = [r]
+  while len(wrk):
+      f = wrk.pop()
+      m.append(f)
+      for c in f.children:
+	  wrk.insert(0,c)
+  return m
+      
 
 #----------------------------------------------------
 # A very simple file iterator that yields a sequence
@@ -237,7 +256,8 @@ def iterate(source, returnGroups=False, returnHeader=False):
     #
     # Iterate through file.
     #
-    header = ([] if returnHeader else None)
+    header = None
+    if returnHeader: header = []
     for lineNum, line in enumerate(source):
 	if line.startswith(COMMENT_CHAR):
 	    if header is not None:
@@ -277,10 +297,11 @@ def xmodels(source):
         yield grp
 
 #----------------------------------------------------
-# Iterator that yields a sequence of models. Each model is the sequence of features 
-# that make it up. The ID/Parent relationships within the group forms a tree (or a dag)
-# with the first element being the root.
-# ASSUMES: the incoming features are assumed to be sorted;
+# Iterator that yields a sequence of models. Each yielded item is the
+# root feature of a model.
+# ASSUMES: the incoming features are sorted s.t. there are no forward references
+# from any feature to its parent. ALSO assumes the coordinates of any parent span 
+# that of any child.
 # 
 # Args:
 #   features	the individual gff3 features, in order
@@ -299,77 +320,51 @@ def models(features):
 	p.children.add(c)
 	c.parents.add(p)
     #
-    def overlaps( f1, f2 ):
-        return f1.seqid == f2.seqid and f1.end >= f2.start and f1.start <= f2.end
-    #
-    def sortCmp(f1, f2):
-	# root comes first
-	if not len(f1.parents) and len(f2.parents): return -1
-	if len(f1.parents) and not len(f2.parents): return 1
-	# leaves come last
-	if len(f1.children) == 0 and len(f2.children) > 0: return 1
-	if len(f1.children) > 0 and len(f2.children) == 0: return -1
-	# sort by start position
-	c = cmp(f1.start, f2.start)
-	if c: return c
-	# 
-	c = cmp(f1.end, f2.end)
-	return -c
-    #
-    def flushFeature(f):
-	id2feature.pop(f.attributes.get('ID',None),None)
-	return f
-    #
     def flushModel(f):
-        m = []
-	def _(f):
-	    m.append(f)
-	    for c in f.children:
-	        _(c)
-	_(f)
-	m.sort(sortCmp)
-	return [flushFeature(x) for x in m]
+	id2feature.pop(f.attributes.get('ID',None),None)
+	for c in f.children:
+	   flushModel(c)
+	return f
 
     # Flushes models. If no argument, flushes all models. If a Feature is passed, flush
-    # models based on comparison with that feature.
-    def flush(f=None):
+    # models based on comparison with that feature. 
+    def flush(models, f=None):
 	flushed = []
-	newmodels = []
-	for r in models:
-	    if not f or not overlaps(r, f):
+	for i,r in enumerate(models):
+	    if not f or not f.overlaps(r):
 	        flushed.append(flushModel(r))
 	    else:
-	        newmodels.append(r)
-        models[:] = newmodels
+	        break
+	del models[0:len(flushed)]
 	return flushed
 
     # Main loop. Iterate over input features. 
-    # Each feature either: starts a new model,
+    # Each feature either starts a new model,
     # or attaches to an existing model.
-    # Each feature may trigger some models to
-    # be flushed.
+    # Each new root may cause others to be flushed.
     for i,f in enumerate(features):
-	# print ">>>", str(f)
 	# attach direct xref attributes for each 
 	f.parents = OrderedSet()
 	f.children = OrderedSet()
         if hasattr(f, 'ID'):
 	    id2feature[f.ID] = f
         if hasattr(f, 'Parent'):
-	    pts = [f.Parent] if type(f.Parent) is types.StringType else f.Parent
+	    pts = f.Parent
+	    if type(pts) is types.StringType:
+	        pts = [pts]
 	    for pid in pts:
 		try:
 		    p = id2feature[pid]
 		    addChild(p, f)
 		except KeyError:
-		    raise RuntimeError("Orphan detected. Feature #%di\n%s" % (i, str(f)))
+		    raise RuntimeError("Forward reference (%s) in feature #%d\n%s" % (pid, i, str(f)))
 	else:
 	    models.append(f)
 	    # only try to flush if current feature is a root
-	    for m in flush(f):
+	    for m in flush(models,f):
 		yield m
     # flush all remaining models
-    for m in flush():
+    for m in flush(models):
         yield m
 
 #----------------------------------------------------
@@ -382,7 +377,7 @@ def models(features):
 #  A dictionary { ID -> Feature }
 #
 def index(features, id2feature=None):
-    id2feature = id2feature if id2feature else {}
+    if id2feature is None: id2feature = {}
     for f in features:
 	id = f.attributes.get("ID",None)
 	if id:
@@ -404,7 +399,7 @@ def crossReference(features):
 	f.parents = OrderedSet()
 	f.children = OrderedSet()
 	pIds = f.attributes.get("Parent",[])
-	pIds = ([pIds] if type(pIds) is types.StringType else pIds)
+	if type(pIds) is types.StringType: pIds = [pIds]
 	for pid in pIds:
 	    parent = id2feature[pid]
 	    f.parents.add(parent)
@@ -487,7 +482,7 @@ def formatColumn9(vals):
 	if x:
 	    parts.append(formatAttribute(n,x))
     for n,v in vals.iteritems():
-	if n not in PRE and n not in EXCLUDE:
+	if n not in PRE and n not in EXCLUDE and v:
 	    parts.append(formatAttribute(n,v))
     ret = C9SEP.join(parts)
     return ret
@@ -518,6 +513,49 @@ def format(tokens):
 	tokens2 = tokens[:]
     tokens2[8] = formatColumn9(tokens[8])
     return TAB.join(map(str,tokens2)) + NL
+
+#----------------------------------------------------
+#
+# IdMaker
+#
+# Class for generating ids.
+#  m = IdMaker()
+#  m.next() -> "id1"
+#  m.next() -> "id2"
+#  m.next('foo') -> "foo1"
+#  m.next() -> "id3"
+#
+class IdMaker:
+    def __init__(self):
+        self.ids = {}
+    def next(self, prefix="id"):
+        i = self.id[prefix] = self.ids.setdefault(prefix,0) + 1
+	return prefix + str(i)
+
+#----------------------------------------------------
+# 
+# splitFile
+# 
+# Splits a gff3 file into separate files based on chromosome.
+# Args:
+#   features	
+#   fileTemplate
+# Returns:
+#   nothing
+#
+def splitFile(features, directory, fileTemplate):
+    c2file = {}
+    for f in iterate(features):
+        c = f.seqid
+	fd = c2file.get(c, None)
+	if not fd:
+	    fileName = os.path.join(directory, fileTemplate % c)
+	    fd = open(fileName, 'w')
+	    c2file[c] = fd
+	fd.write(str(f))
+
+    for (c,fd) in c2file.items():
+        fd.close()
 
 #----------------------------------------------------
 #

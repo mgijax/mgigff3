@@ -11,7 +11,7 @@
 import sys
 import os
 import types
-import lib.gff3 as gff3
+import gff3
 import optparse
 
 TAB	= '\t'
@@ -89,12 +89,33 @@ class ConvertNCBI:
 	#
 	f[0] = self.currentRegion
 	f[1] = "NCBI"
+	xrs = f.attributes.get('Dbxref', [])
+	if type(xrs) is types.StringType:
+	    xrs = [xrs]
+	xrs = filter(lambda x: x.startswith("GeneID:"), xrs)
+	if len(xrs) == 1:
+	    f.attributes["curie"] = "NCBI_Gene:" + xrs[0].split(":")[1]
+	biotype = f.attributes.get("gene_biotype", None)
+	if biotype:
+	    f.attributes["so_term_name"] = biotype
+	    del f.attributes["gene_biotype"]
+	f.attributes.pop('product',None)
+	f.attributes.pop('model_evidence',None)
+	f.attributes.pop('gbkey',None)
+	f.attributes.pop('gene',None)
+	f.attributes.pop('Dbxref',None)
+	f.attributes.pop('description',None)
 	return f
 
-    def main(self):
-        for f in gff3.iterate(sys.stdin):
+    def pre(self, inp):
+        for f in gff3.iterate(inp):
 	    if self.process(f):
-		sys.stdout.write(str(f))
+	       yield f
+
+    def main(self):
+	for m in gff3.models(self.pre(sys.stdin)):
+	   for f in gff3.flattenModel(m):
+	       print str(f),
 
 #
 if __name__ == "__main__":
