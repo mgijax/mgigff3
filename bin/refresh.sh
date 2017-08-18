@@ -29,45 +29,94 @@ function logit {
 
 logit "Starting refresh..." 
 
+nargs=$#
+domgi=F
+domgicomputed=F
+doncbi=F
+doensembl=F
+domirbase=F
+domerge=F
+
+until [ -z "$1" ]  # Until all parameters used up . . .
+do
+    case "$1" in
+    mgi)
+	domgi=T
+        ;;
+    mgicomputed)
+	domgicomputed=T
+        ;;
+    ncbi)
+	doncbi=T
+        ;;
+    ensembl)
+	doensembl=T
+        ;;
+    mirbase)
+	domirbase=T
+        ;;
+    merge)
+	domerge=T
+        ;;
+    *)
+        echo "Unrecognized option:" $1
+	exit -1
+    esac
+    shift
+done
+
+
 ########
 # MGI
-#logit 'prepMgi...'
-#${PYTHON} ${BIN}/prepMgi.py | ${SORTCMD} | ${SPLIT} -t "mgi.chr%s.gff" 
+if [ $nargs -eq 0 -o $domgi == T ]; then
+    logit 'prepMgi...'
+    ${PYTHON} ${BIN}/prepMgi.py | ${SORTCMD} | ${SPLIT} -t "mgi.chr%s.gff" 
+fi
 
 ########
 # MGI computed
-# logit "prepMgiComputed..."
-#${PYTHON} ${BIN}/prepMgiComputed.py > ${WORKINGDIR}/mgi.gff3
+if [ $nargs -eq 0 -o $domgicomputed == T ]; then
+    # logit "prepMgiComputed..."
+    #${PYTHON} ${BIN}/prepMgiComputed.py > ${WORKINGDIR}/mgi.gff3
+fi
 
 ########
 # NCBI
-#logit 'prepNcbi...'
-#${PYTHON} ${BIN}/prepNcbi.py < ${DATADIR}/ref_GRCm38.p4_top_level.gff3 | ${SPLIT} -t "ncbi.chr%s.gff"
+if [ $nargs -eq 0 -o $doncbi == T ]; then
+    logit 'prepNcbi...'
+    ${PYTHON} ${BIN}/prepNcbi.py < ${DATADIR}/ref_GRCm38.p4_top_level.gff3 | ${SPLIT} -t "ncbi.chr%s.gff"
+fi
 
 ########
 # miRBase
-#logit 'prepMirbase...'
-#${PYTHON} ${BIN}/prepMirbase.py < ${DATADIR}/miRBase21_mmu.gff3 | ${SPLIT} -t "mirbase.chr%s.gff"
+if [ $nargs -eq 0 -o $domirbase == T ]; then
+    logit 'prepMirbase...'
+    ${PYTHON} ${BIN}/prepMirbase.py < ${DATADIR}/miRBase21_mmu.gff3 | ${SPLIT} -t "mirbase.chr%s.gff"
+fi
 
 ########
 # ENSEMBL
-ENSEMBLver=89
-ENSEMBLfile=Mus_musculus.GRCm38.${ENSEMBLver}.gff3
-ENSEMBLurl=ftp://ftp.ensembl.org/pub/release-${ENSEMBLver}/gff3/mus_musculus/${ENSEMBLfile}.gz
-#
-#${CURL} ${ENSEMBLurl} | ${GUNZIP} > ${DATADIR}/${ENSEMBLfile}
-#logit 'prepEnsembl...'
-#${PYTHON} ${BIN}/prepEnsembl.py < ${DATADIR}/${ENSEMBLfile} | ${SPLIT} -t "ensembl.chr%s.gff"
+if [ $nargs -eq 0 -o $doensembl == T ]; then
+    ENSEMBLver=89
+    ENSEMBLfile=Mus_musculus.GRCm38.${ENSEMBLver}.gff3
+    ENSEMBLurl=ftp://ftp.ensembl.org/pub/release-${ENSEMBLver}/gff3/mus_musculus/${ENSEMBLfile}.gz
+    #
+    #${CURL} ${ENSEMBLurl} | ${GUNZIP} > ${DATADIR}/${ENSEMBLfile}
+    logit 'prepEnsembl...'
+    ${PYTHON} ${BIN}/prepEnsembl.py < ${DATADIR}/${ENSEMBLfile} | ${SPLIT} -t "ensembl.chr%s.gff"
+fi
 
 ########
-
-chrs=( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 X Y MT )
-for i in "${chrs[@]}"
-do : 
-    logit
-    logit "merging chr${i}..."
-    ${PYTHON} ${BIN}/merge.py ${WORKINGDIR}/*.chr${i}.gff > ${WORKINGDIR}/chr${i}.gff 2>> ${LOGFILE}
-done
+# MERGE phase
+if [ $nargs -eq 0 -o $domerge == T ]; then
+    chrs=( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 X Y MT )
+    for i in "${chrs[@]}"
+    do : 
+	logit
+	logit "merging chr${i}..."
+	${PYTHON} ${BIN}/merge.py ${WORKINGDIR}/*.chr${i}.gff > ${WORKINGDIR}/chr${i}.gff 2>> ${LOGFILE}
+    done
+fi
 
 ########
 logit 'Refresh finished.'
