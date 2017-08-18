@@ -5,6 +5,9 @@
 # This is NOT a complete implementation of GFF3! (E.g., it
 # does not do validation.)
 #
+# For the full GFF3 spec. see:
+#  https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md
+#
 # Example usage: Print the ID (col 9 attribute) and length
 # of all the genes in a gff file.
 #	import gff3
@@ -63,6 +66,8 @@ import sys
 import os
 import types
 import urllib
+import itertools
+import heapq
 import re
 from OrderedSet import OrderedSet
 
@@ -73,6 +78,9 @@ C9SEP = ';'
 QUOTECHARS_RE = re.compile(r'[\t\n\r;=%&,]')
 COMMENT_CHAR = '#'
 GROUPSEP = "###\n"
+
+# According to GFF spec, these predefined attributes support multiple values
+MULTIVALUED = set(["Parent", "Alias", "Note", "Dbxref", "Ontology_term"])
 
 #----------------------------------------------------
 HASH	= '#'
@@ -204,24 +212,25 @@ class Feature(types.ListType):
     
     def __str__(self):
 	return format(self)
-    #
-    def overlaps( self, f ):
-        return self.seqid == f.seqid and self.end >= f.start and self.start <= f.end
 
-#----------------------------------------------------
-# 
-# flattenModel
-#
-def flattenModel(r):
-  m = []
-  wrk = [r]
-  while len(wrk):
-      f = wrk.pop()
-      m.append(f)
-      for c in f.children:
-	  wrk.insert(0,c)
-  return m
-      
+    # Computes and returns the amount of overlap between two features.
+    # Nonoverlapping (disjoint) features have a negative overlap equal to the distance
+    # between them.
+    # 
+    def overlap( self, f ):
+        return min(self.end, f.end) - max(self.start, f.start) + 1
+
+    # Returns true if this feature overlaps f by at least a specified about.
+    # Args:
+    #   f - (required) the other Feature to compare to
+    #	minOverlaps - (optional) the minimum amount the features must
+    #	    overlap to return True. The default value (1) returns true if
+    #	    the features overlap by at least one base. Setting minOverlap to
+    #	    a negative number (-n) returns true if the features overlap or are
+    #	    separated by no more than abs(n)
+    #
+    def overlaps( self, f, minOverlap=1 ):
+        return self.seqid == f.seqid and self.overlap(f) >= minOverlap
 
 #----------------------------------------------------
 # A very simple file iterator that yields a sequence
@@ -291,18 +300,15 @@ def iterate(source, returnGroups=False, returnHeader=False):
 	source.close()
 
 #----------------------------------------------------
-def xmodels(source):
-    for grp in iterate(source, returnGroups=True):
-	crossReference(grp)
-        yield grp
-
-#----------------------------------------------------
 # Iterator that yields a sequence of models. Each yielded item is the
 # root feature of a model.
-# ASSUMES: the incoming features are sorted s.t. there are no forward references
-# from any feature to its parent. ALSO assumes the coordinates of any parent span 
-# that of any child.
-# 
+# ASSUMES: the incoming features are sorted in the conventional way, to wit:
+# 	- parents come before children (no forward Parent references)
+#	- the coordinates of any feature are spanned by the coordinates of its parent
+#	- subfeatures of non-overlapping genes are segregated in the file (or to
+#	put it another way: features and subfeatures of a gene are grouped in the file).
+#	Means: as one scans through the file, it's easy to tell when you've reached the
+#	end of the features for a gene: when you see a feature that doesn't overlap the gene.
 # Args:
 #   features	the individual gff3 features, in order
 # Yields:
@@ -366,6 +372,79 @@ def models(features):
     # flush all remaining models
     for m in flush(models):
         yield m
+
+#----------------------------------------------------
+# Merges n sorted input feature streams into one 
+# Args:
+#  featureIterators list of iterators over features.
+# Returns:
+#  iterator over the merged stream
+def merge(*featureIters):
+    mis = [ itertools.imap(lambda m:(m.seqid, m.start, m), i) for i in featureIters ]
+    for m in heapq.merge(*mis):
+        yield m[2]
+
+#----------------------------------------------------
+# 
+# flattenModel - given the root feature of a model, return
+# a list of all the features in the model.
+#
+def flattenModel(r):
+  m = []
+  wrk = [r]
+  while len(wrk):
+      f = wrk.pop()
+      m.append(f)
+      for c in f.children:
+	  wrk.insert(0,c)
+  return m
+
+#----------------------------------------------------
+#
+# IdMaker
+#
+# Class for generating ids.
+#  m = IdMaker()
+#  m.next() -> "id1"
+#  m.next() -> "id2"
+#  m.next('foo') -> "foo1"
+#  m.next() -> "id3"
+#  m.next('foo') -> "foo2"
+#  m.next('bar') -> "bar1"
+#
+class IdMaker:
+    def __init__(self):
+        self.ids = {}
+    def next(self, prefix="id"):
+	prefix = prefix.lower()
+        i = self.ids[prefix] = self.ids.setdefault(prefix,0) + 1
+	return prefix + str(i)
+
+#----------------------------------------------------
+# 
+# splitFile
+# 
+# Splits a gff3 file into separate files based on chromosome.
+# Args:
+#   features	
+#   directory
+#   fileTemplate
+# Returns:
+#   nothing
+#
+def splitFile(features, directory, fileTemplate):
+    c2file = {}
+    for f in iterate(features):
+        c = f.seqid
+	fd = c2file.get(c, None)
+	if not fd:
+	    fileName = os.path.join(directory, fileTemplate % c)
+	    fd = open(fileName, 'w')
+	    c2file[c] = fd
+	fd.write(str(f))
+
+    for (c,fd) in c2file.items():
+        fd.close()
 
 #----------------------------------------------------
 # Builds and returns an index from feature.ID to feature.
@@ -442,7 +521,7 @@ def parseColumn9(value):
 	    raise ParseError("Bad column 9 format near '%s'."%t)
 	n = unquote(tt[0].strip())
 	v = map(unquote, tt[1].strip().split(COMMA))
-	if len(v) == 1:
+	if len(v) == 1 and not n in MULTIVALUED:
 	    v = v[0]
 	c9[n] = v
     return c9
@@ -513,49 +592,6 @@ def format(tokens):
 	tokens2 = tokens[:]
     tokens2[8] = formatColumn9(tokens[8])
     return TAB.join(map(str,tokens2)) + NL
-
-#----------------------------------------------------
-#
-# IdMaker
-#
-# Class for generating ids.
-#  m = IdMaker()
-#  m.next() -> "id1"
-#  m.next() -> "id2"
-#  m.next('foo') -> "foo1"
-#  m.next() -> "id3"
-#
-class IdMaker:
-    def __init__(self):
-        self.ids = {}
-    def next(self, prefix="id"):
-        i = self.id[prefix] = self.ids.setdefault(prefix,0) + 1
-	return prefix + str(i)
-
-#----------------------------------------------------
-# 
-# splitFile
-# 
-# Splits a gff3 file into separate files based on chromosome.
-# Args:
-#   features	
-#   fileTemplate
-# Returns:
-#   nothing
-#
-def splitFile(features, directory, fileTemplate):
-    c2file = {}
-    for f in iterate(features):
-        c = f.seqid
-	fd = c2file.get(c, None)
-	if not fd:
-	    fileName = os.path.join(directory, fileTemplate % c)
-	    fd = open(fileName, 'w')
-	    c2file[c] = fd
-	fd.write(str(f))
-
-    for (c,fd) in c2file.items():
-        fd.close()
 
 #----------------------------------------------------
 #

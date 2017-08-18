@@ -39,12 +39,14 @@ for f in gff3.iterate( sys.stdin ):
 	#
 	f[2] = 'gene'	# 
 	f.attributes["curie"] = "miRBase:" + f.ID
+	f.attributes["so_term_name"] = "miRNA_gene"
 	sys.stdout.write(str(f))
 	f.attributes.pop("curie", None)
+	f.attributes.pop("so_term_name", None)
 	#
 	# Transcript feature
 	#
-	f[2] = 'transcript'
+	f[2] = 'miRNA_primary_transcript'
 	f.Parent = i
 	nt = tCounts.setdefault(i,0) + 1
 	tCounts[i] = nt

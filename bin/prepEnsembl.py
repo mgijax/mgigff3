@@ -4,20 +4,36 @@ import gff3
 from OrderedSet import OrderedSet
 from itertools import ifilter
 
+EXCLUDE_SOURCES = OrderedSet([
+])
 EXCLUDE_TYPES = OrderedSet([
     "chromosome",
-    "biological_region"
+    "biological_region",
+    "supercontig",
+    "three_prime_UTR",
+    "five_prime_UTR"
 ])
 
-feats = ifilter(lambda f: f.type not in EXCLUDE_TYPES, gff3.iterate(sys.stdin))
+filtFcn = lambda f: f.source not in EXCLUDE_SOURCES and f.type not in EXCLUDE_TYPES
+feats = ifilter(filtFcn, gff3.iterate(sys.stdin))
 for m in gff3.models(feats):
     for f in gff3.flattenModel(m):
 	if not f.type in EXCLUDE_TYPES:
-	    f.attributes.pop("Name", None)
+	    f.source = "ENSEMBL"
+	    if len(f.parents) == 0:
+	        f.attributes["curie"] = "ENSEMBL:" + f.ID.split(":")[1]
 	    f.attributes.pop("version", None)
 	    f.attributes.pop("description", None)
 	    f.attributes.pop("logic_name", None)
 	    f.attributes.pop("gene_id", None)
-	    if len(f.parents) == 0:
-	        f.attributes["curie"] = "ENSEMBL:" + f.ID.split(":")[1]
+	    f.attributes.pop("transcript_support_level", None)
+	    biotype = f.attributes.pop("biotype", None)
+	    if biotype and len(f.parents) == 0:
+		if biotype == "protein_coding":
+		    biotype += "_gene"
+	        f.attributes["so_term_name"] = biotype
+	    f.attributes.pop("rank", None)
+	    f.attributes.pop("constitutive", None)
+	    f.attributes.pop("ensembl_end_phase", None)
+	    f.attributes.pop("ensembl_phase", None)
 	    sys.stdout.write(str(f))

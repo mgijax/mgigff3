@@ -10,6 +10,10 @@
 # Input: file of MGI gene ids (e.g., the orphan MGI report). Any tab delimited
 # file with MGI id in the first column will do.
 #
+# Output: Tab delimited file of sequences for these genes plus additional gene info.
+# Has columns:
+#	seqId, mgiId, symbol, name, type, chromosome
+#
 # Processing: The MGI ids are first uploaded into a temp table.
 # Then MGI is queried to retrieve sequence ids associated with
 # the MGI ids. The sequences are restricted as follows:
@@ -17,9 +21,6 @@
 # - must be associated with only one gene.
 # - only DNA and RNA (no protein)
 # - if DNA, must be < 10 kb in length
-#
-# Output: Tab delimited file having columns:
-#	seqId, mgiId, symbol, name, type, chromosome
 #
 # Example:
 #	M57401        MGI:102792      Mcptl   Gene    14

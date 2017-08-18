@@ -89,22 +89,31 @@ class ConvertNCBI:
 	#
 	f[0] = self.currentRegion
 	f[1] = "NCBI"
-	xrs = f.attributes.get('Dbxref', [])
-	if type(xrs) is types.StringType:
-	    xrs = [xrs]
-	xrs = filter(lambda x: x.startswith("GeneID:"), xrs)
-	if len(xrs) == 1:
-	    f.attributes["curie"] = "NCBI_Gene:" + xrs[0].split(":")[1]
-	biotype = f.attributes.get("gene_biotype", None)
-	if biotype:
-	    f.attributes["so_term_name"] = biotype
-	    del f.attributes["gene_biotype"]
+	if "Parent" not in f.attributes:
+	    # set the curie for top level nodes
+	    xrs = f.attributes.get('Dbxref', [])
+	    if type(xrs) is types.StringType:
+		xrs = [xrs]
+	    xrs = filter(lambda x: x.startswith("GeneID:"), xrs)
+	    if len(xrs) == 1:
+		f.attributes["curie"] = xrs[0].replace("GeneID:","NCBI_Gene:")
+	    # set the so_term_name for top level nodes
+	    biotype = f.attributes.get("gene_biotype", None)
+	    if biotype:
+		if biotype == "protein_coding":
+		    biotype += "_gene"
+		elif biotype == "pseudogene":
+		    f[2] = "pseudogene"
+		f.attributes["so_term_name"] = biotype
+	f.attributes.pop('gene_biotype',None)
+	f.attributes.pop('Dbxref',None)
+	f.attributes.pop('gene_synonym',None)
 	f.attributes.pop('product',None)
 	f.attributes.pop('model_evidence',None)
 	f.attributes.pop('gbkey',None)
 	f.attributes.pop('gene',None)
-	f.attributes.pop('Dbxref',None)
 	f.attributes.pop('description',None)
+	f.attributes.pop('pseudo',None)
 	return f
 
     def pre(self, inp):

@@ -28,7 +28,6 @@ def getFeatures():
 	"crossReferences.source.name"
     )
     query.add_constraint("organism.taxonId", "=", "10090", code = "B")
-    query.add_constraint("mgiType", "IS NOT NULL", code = "A")
     query.add_constraint("dataSets.name", "=", "Mouse Gene Catalog from MGI", code = "C")
     query.add_constraint("crossReferences.source.name", "ONE OF", 
          ["Ensembl Gene Model", "NCBI Gene Model", "miRBase"], code = "D")
@@ -40,7 +39,7 @@ def getFeatures():
 def main():
     for f in getFeatures():
 	soterm = f.sequenceOntologyTerm.name
-	if "gene" in soterm or "pseudo" in soterm:
+	if "gene" in soterm or "pseudo" in soterm or "lnc_RNA" in soterm or "lncRNA" in soterm:
 	    col3 = "pseudogene" if "pseudo" in soterm else "gene"
 	    s = f.chromosomeLocation.strand
 	    strand = "+" if s == "+1" else "-" if s == "-1" else "."
