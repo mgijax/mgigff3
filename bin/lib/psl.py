@@ -27,25 +27,28 @@
 # 6. qBaseInsert - Number of bases inserted in query
 # 7. tNumInsert - Number of inserts in target
 # 8. tBaseInsert - Number of bases inserted in target
-# 9. strand - '+' or '-' for query strand. For translated alignments, second '+'or '-' is for genomic strand
-# 10. qName - Query sequence name
+# *9. strand - '+' or '-' for query strand. For translated alignments, second '+'or '-' is for genomic strand
+# *10. qName - Query sequence name
 # 11. qSize - Query sequence size
 # 12. qStart - Alignment start position in query
 # 13. qEnd - Alignment end position in query
-# 14. tName - Target sequence name
+# *14. tName - Target sequence name
 # 15. tSize - Target sequence size
 # 16. tStart - Alignment start position in target
 # 17. tEnd - Alignment end position in target
-# 18. blockCount - Number of blocks in the alignment (a block contains no gaps)
-# 19. blockSizes - Comma-separated list of sizes of each block
+# *18. blockCount - Number of blocks in the alignment (a block contains no gaps)
+# *19. blockSizes - Comma-separated list of sizes of each block
 # 20. qStarts - Comma-separated list of starting positions of each block in query
-# 21. tStarts - Comma-separated list of starting positions of each block in target
+# *21. tStarts - Comma-separated list of starting positions of each block in target
+#
+# *Asterisks indicate the columns we are usually concerned with
 #
 # A psl file may optionally have a 5-line header.
 #
 
 import sys
 import types
+import gff3
 
 TAB	= '\t'
 NL	= '\n'
@@ -130,6 +133,14 @@ class Alignment(types.ListType):
 	    x[i] = COMMA.join(map(str, x[i])) + COMMA
 	return TAB.join(map(str,x)) + NL
 
+    def matchLength(self):
+        return self.qEnd - self.qStart + 1
+
+    def percentIdentity(self):
+        return (100.0 * self.matches) / self.matchLength()
+
+    def percentLength(self):
+        return (100.0 * self.matchLength()) / self.qSize
 
 def iterate(input):
     #
@@ -142,12 +153,56 @@ def iterate(input):
 	else:
 	    input = open(input, 'r')
 	    closeit = True
-    for line in input:
-	a = Alignment(line)
+    for a in input:
+	if type(a) is types.StringType:
+	    a = Alignment(a)
 	yield a
     if closeit:
 	input.close()
 
+def toGff(input):
+    alignments = iterate(input)
+    idMaker = gff3.IdMaker()
+    for a in alignments:
+	aid = idMaker.next("match")
+        root = gff3.Feature([
+		a.tName,
+		"BlatAlignment",
+		"match",
+		a.tStart,
+		a.tEnd,
+		".",
+		a.strand,
+		'.',
+		{
+		    'ID'    : aid,
+		    'qname' : a.qName,
+		    'matchLen' : a.matchLength(),
+		    'pctIdentity' : a.percentIdentity(),
+		    'pctLen' : a.percentLength()
+		}
+               ])
+        yield root 
+	for i,tstart in enumerate(a.tStarts):
+	    part = gff3.Feature([
+		a.tName,
+		"BlatAlignment",
+		"match_part",
+		tstart,
+		tstart + a.blockSizes[i] - 1,
+		".",
+		a.strand,
+		'.',
+		{
+		    'ID'    : idMaker.next("match_part"),
+		    'Parent': aid,
+		    'qname' : a.qName
+		}
+	       ])
+	    yield part
+
+
+    
 if __name__ == "__main__":
-    for a in iterate(sys.stdin):
+    for a in toGff(sys.stdin):
 	sys.stdout.write(str(a))

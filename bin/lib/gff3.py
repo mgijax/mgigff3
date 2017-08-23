@@ -162,7 +162,7 @@ class Feature(types.ListType):
 	elif type(arg) is types.StringType:
 	    arg = parse(arg)
 	elif len(arg) != 9:
-	    raise ValueError("Invalid initializer for GFFFeature: " \
+	    raise ValueError("Invalid initializer for GffFeature: " \
 		+ (" %d fields\n" % len(arg)) + str(arg))
 	types.ListType.__init__(self,arg)
 	#
