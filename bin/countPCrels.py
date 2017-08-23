@@ -5,7 +5,7 @@
 # p is a feature and c is a child of p.
 #
 
-import lib.gff3 as gff3
+import gff3
 import sys
 
 roots = {}
@@ -33,7 +33,7 @@ def pcounts(msg, counts):
 	print "\t"+k, counts[k]
  
 def main():
-    for m in gff3.models(sys.stdin):
+    for m in gff3.models(sys.stdin, flatten=True):
 	for f in m:
 	    if len(f.parents) == 0:
 		count(f, [f.type])

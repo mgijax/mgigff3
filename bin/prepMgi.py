@@ -4,7 +4,7 @@ import gff3
 #
 TAB	= "\t"
 #
-pnameMap = {
+pnameMap = {	# map from provider name to prefixes.
     "NCBI Gene Model" : "NCBI_Gene",
     "Ensembl Gene Model" : "ENSEMBL",
     "miRBase" : "miRBase",
@@ -43,7 +43,7 @@ def main():
 	    col3 = "pseudogene" if "pseudo" in soterm else "gene"
 	    s = f.chromosomeLocation.strand
 	    strand = "+" if s == "+1" else "-" if s == "-1" else "."
-	    models = [ pnameMap[xr.source.name] + ":" + xr.identifier for xr in f.crossReferences ]
+	    dbxrefs = [ pnameMap[xr.source.name] + ":" + xr.identifier for xr in f.crossReferences ]
 	    g = gff3.Feature([
 		f.chromosomeLocation.locatedOn.primaryIdentifier,
 		"MGI",
@@ -59,7 +59,7 @@ def main():
 		    "so_term_name" : f.sequenceOntologyTerm.name,
 		    "Name": f.symbol,
 		    "description": f.name,
-		    "Dbxref" : models
+		    "Dbxref" : dbxrefs
 
 		}
 	    ])

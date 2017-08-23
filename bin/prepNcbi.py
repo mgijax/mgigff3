@@ -114,6 +114,9 @@ class ConvertNCBI:
 	f.attributes.pop('gene',None)
 	f.attributes.pop('description',None)
 	f.attributes.pop('pseudo',None)
+	if f.type == "exon":
+	    f.attributes.pop("transcript_id",None)
+	    f.attributes.pop("ncrna_class",None)
 	return f
 
     def pre(self, inp):

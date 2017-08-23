@@ -5,14 +5,18 @@ CURL=curl
 CP=cp
 GUNZIP=gunzip
 GREP=grep
+SORT=sort
+MKDIR=mkdir
 
 # https://stackoverflow.com/questions/59895/getting-the-source-directory-of-a-bash-script-from-within
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PYTHONPATH=${DIR}/lib:${PYTHONPATH:-.}
-export PYTHONPATH
 
 BIN=${DIR}
 WORKINGDIR=${DIR}/../work
+${MKDIR} -p ${WORKINGDIR}
+CACHEDIR=${DIR}/../cache
+${MKDIR} -p ${CACHEDIR}
 
 DATADIR=${DIR}/../data
 #DATADIR=/data/research/mouse_build_38_external/original_annotations
@@ -27,9 +31,10 @@ function logit {
     echo `date` $1 >> ${LOGFILE}
 }
 
-logit "Starting refresh..." 
+export DIR BIN PYTHONPATH WORKINGDIR CACHEDIR DATADIR LOGFILE SORT
 
 nargs=$#
+
 domgi=F
 domgicomputed=F
 doncbi=F
@@ -43,7 +48,7 @@ do
     mgi)
 	domgi=T
         ;;
-    mgicomputed)
+    mgic*)
 	domgicomputed=T
         ;;
     ncbi)
@@ -67,6 +72,10 @@ done
 
 
 ########
+
+logit "Starting refresh..." 
+
+########
 # MGI
 if [ $nargs -eq 0 -o $domgi == T ]; then
     logit 'prepMgi...'
@@ -76,8 +85,8 @@ fi
 ########
 # MGI computed
 if [ $nargs -eq 0 -o $domgicomputed == T ]; then
-    # logit "prepMgiComputed..."
-    #${PYTHON} ${BIN}/prepMgiComputed.py > ${WORKINGDIR}/mgi.gff3
+    logit "prepMgiComputed..."
+    prepMgiComputed.sh
 fi
 
 ########

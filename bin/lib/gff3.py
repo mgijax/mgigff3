@@ -301,7 +301,7 @@ def iterate(source, returnGroups=False, returnHeader=False):
 
 #----------------------------------------------------
 # Iterator that yields a sequence of models. Each yielded item is the
-# root feature of a model.
+# root feature of a model. 
 # ASSUMES: the incoming features are sorted in the conventional way, to wit:
 # 	- parents come before children (no forward Parent references)
 #	- the coordinates of any feature are spanned by the coordinates of its parent
@@ -310,11 +310,16 @@ def iterate(source, returnGroups=False, returnHeader=False):
 #	Means: as one scans through the file, it's easy to tell when you've reached the
 #	end of the features for a gene: when you see a feature that doesn't overlap the gene.
 # Args:
-#   features	the individual gff3 features, in order
+#   features	the individual gff3 features, in order. 
+#		May be a file name, a list or fiterator.
 # Yields:
-#   sequence of models, each of which is a list of Features.
+#   sequence of root features of models. Each yielded item is a a feature, say a gene,
+#   with the rest of its (transcripts, exon, etc) hanging off it via special attributes
+#   'parents' and 'children' which are themselves arrays of features. So, for the root
+#   feature of a model, m, m.children is the list of transcripts, and foreach transcript, t,
+#   t.parents == [m].
 #
-def models(features):
+def models(features, flatten=False):
     if type(features) is types.StringType \
     or type(features) is types.FileType:
         features = iterate(features)
@@ -350,8 +355,8 @@ def models(features):
     # Each new root may cause others to be flushed.
     for i,f in enumerate(features):
 	# attach direct xref attributes for each 
-	f.parents = OrderedSet()
-	f.children = OrderedSet()
+	f.__dict__["parents"] = OrderedSet()
+	f.__dict__["children"] = OrderedSet()
         if hasattr(f, 'ID'):
 	    id2feature[f.ID] = f
         if hasattr(f, 'Parent'):
@@ -368,10 +373,59 @@ def models(features):
 	    models.append(f)
 	    # only try to flush if current feature is a root
 	    for m in flush(models,f):
-		yield m
+		v = flattenModel(m) if flatten else m
+		yield v
     # flush all remaining models
     for m in flush(models):
-        yield m
+        v = flattenModel(m) if flatten else m
+	yield v
+
+#----------------------------------------------------
+# walkModel - given the root feature of the model, yields its
+# elements in breadth-first order.
+#
+def walkModel(m):
+  q = [m]
+  while len(q):
+      f = q.pop()
+      yield f
+      q[0:0] = f.children
+
+#----------------------------------------------------
+# flattenModel - given the root feature of a model, return
+# a list of all the features in the model.
+#
+def flattenModel(m):
+  return list(walkModel(m))
+
+#----------------------------------------------------
+# Reassigns the ID (and referring Parent attributes) for all the features in a model.
+# Generates IDs like gene1, gene2, exon1, ... (feature's type + counter.)
+#
+def reassignIDs(feats, idMaker):
+    #
+    idmap = {}
+    #
+    for f in feats:
+	if 'ID' not in f.attributes:
+	    f.ID = idMaker.next(f.type)
+	elif f.ID in idmap:
+	    f.ID = idmap[f.ID]
+	else:
+	    i = idMaker.next(f.type)
+	    idmap[f.ID] = i
+	    f.ID = i
+    #
+    for f in feats:
+	pids = f.Parent if 'Parent' in f.attributes else []
+	f.Parent = [ idmap[pid] for pid in pids ]
+
+#----------------------------------------------------
+def copyModel(mfeats, idMaker = None):
+  if idMaker is None: idMaker = IdMaker()
+  copy = [ Feature(f) for f in mfeats ]
+  crossReference(copy)
+  return copy
 
 #----------------------------------------------------
 # Merges n sorted input feature streams into one 
@@ -383,21 +437,6 @@ def merge(*featureIters):
     mis = [ itertools.imap(lambda m:(m.seqid, m.start, m), i) for i in featureIters ]
     for m in heapq.merge(*mis):
         yield m[2]
-
-#----------------------------------------------------
-# 
-# flattenModel - given the root feature of a model, return
-# a list of all the features in the model.
-#
-def flattenModel(r):
-  m = []
-  wrk = [r]
-  while len(wrk):
-      f = wrk.pop()
-      m.append(f)
-      for c in f.children:
-	  wrk.insert(0,c)
-  return m
 
 #----------------------------------------------------
 #
@@ -475,8 +514,8 @@ def crossReference(features):
     id2feature = index(features)
     #
     for f in features:
-	f.parents = OrderedSet()
-	f.children = OrderedSet()
+	f.__dict__["parents"] = OrderedSet()
+	f.__dict__["children"] = OrderedSet()
 	pIds = f.attributes.get("Parent",[])
 	if type(pIds) is types.StringType: pIds = [pIds]
 	for pid in pIds:
@@ -545,7 +584,6 @@ def unquote(v):
 #----------------------------------------------------
 #
 PRE = ['ID','Name','Parent']
-EXCLUDE = ['parents','children']
 
 #----------------------------------------------------
 #
@@ -561,7 +599,7 @@ def formatColumn9(vals):
 	if x:
 	    parts.append(formatAttribute(n,x))
     for n,v in vals.iteritems():
-	if n not in PRE and n not in EXCLUDE and v:
+	if n not in PRE and v:
 	    parts.append(formatAttribute(n,v))
     ret = C9SEP.join(parts)
     return ret

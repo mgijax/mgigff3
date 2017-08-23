@@ -36,4 +36,6 @@ for m in gff3.models(feats):
 	    f.attributes.pop("constitutive", None)
 	    f.attributes.pop("ensembl_end_phase", None)
 	    f.attributes.pop("ensembl_phase", None)
+	    if f.type == "CDS":
+	        f.Name = f.protein_id
 	    sys.stdout.write(str(f))

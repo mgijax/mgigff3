@@ -1,47 +1,52 @@
 #
 # merge.py
 #
+# Merges n sorted gff files into one and merges models from other providers under the corresponding MGI feature.
+#
+#
 
 import gff3
 import sys
 
+WINDOWSIZE = 200000
+
 class ModelMerger:
-    def __init__(self):
+    def __init__(self, wsize=WINDOWSIZE):
 	self.idMaker = gff3.IdMaker()
 	self.pendingMgi = []
 	self.pendingNonMgi = []
-	self.windowSize = 200000
+	self.windowSize = wsize
 
+    # Prints a model to standard out. 
+    #
     def printModel(self, feats):
 	for f in feats:
 	    sys.stdout.write(str(f))
 
-    def reassignIDs(self, m):
-        feats = gff3.flattenModel(m)
-	idmap = {}
-	for f in feats:
-	    if 'ID' not in f.attributes:
-	        f.ID = self.idMaker.next(f.type)
-	    elif f.ID in idmap:
-	        f.ID = idmap[f.ID]
-	    else:
-		i = self.idMaker.next(f.type)
-		idmap[f.ID] = i
-		f.ID = i
-	for f in feats:
-	    pds = [ p.ID for p in f.parents ]
-	    f.Parent = ",".join(pds)
-
+    # Merges model f into m. f is the root of a gene model from some provider. 
+    # m is the MGI feature and is the root of a merged model hierarchy that
+    # grows as models from multiple providers are merged.
+    #
+    # The model hierarchy under f is copied into m, rather than moved, because
+    # of complex (non 1-1) associations among models. (I.e., f may be merged
+    # into more than one m).
+    #
     def mergeModels(self, m, f):
 	m.start = min(m.start, f.start)
 	m.end   = max(m.end,   f.end)
+	feats = gff3.flattenModel(f)
+	for f2 in feats:
+	    f2.attributes["mgi_id"] = m.curie
 	f._merged.append(m.curie)
 	m._merged.append(f.curie)
-	for c in f.children:
+	for c in feats[0].children:
 	    c.Parent=[m.ID]
-	    c.parents = [m]
+	    c.parents.clear()
+	    c.parents.add(m)
 	    m.children.add(c)
 
+    # Message logger
+    #
     def log(self, m):
         sys.stderr.write(m)
 
@@ -72,9 +77,14 @@ class ModelMerger:
 	    self.pendingNonMgi.pop(0)
 
 	for m in flushed:
-	    self.reassignIDs(m)
-	    self.printModel(gff3.flattenModel(m))
+	    m.attributes.pop('_merged', None)
+	    feats = gff3.flattenModel(m)
+	    gff3.reassignIDs(feats, self.idMaker)
+	    self.printModel(feats)
 
+    # Adds MGI feature m to the pending queue. Merges in any nonMgi models from the
+    # other queue that are referenced in Dbxrefs.
+    #
     def addMgi(self, m):
 	m._merged = []
 	self.pendingMgi.append(m)
@@ -82,6 +92,9 @@ class ModelMerger:
 	    if f.curie in m.attributes.get("Dbxref",[]):
 		self.mergeModels(m, f)
 
+    # Adds nonMgi model f to the pending queue. Merges f into any MGI feature from the
+    # other queue that references f in its Dbxrefs.
+    #
     def addNonMgi(self, f):
 	f._merged = []
 	self.pendingNonMgi.append(f)
@@ -89,8 +102,15 @@ class ModelMerger:
 	    if f.curie in m.attributes.get("Dbxref",[]):
 		self.mergeModels(m, f)
 
-    def main(self):
-	iters = [gff3.models(x) for x in sys.argv[1:]]
+    # Merges the sorted gff files listed on the command line into a single stream,
+    # then merges features based on Dbxrefs. Maintains a kind of moving window in the
+    # form of two "pending queues". As items are consumed from the sorted stream, they are
+    # appended to the queues. Items are removed from the front of the queue when the 
+    # current position (start coordinate of the latest input feature) moves beyond 
+    # their endpoints. 
+    #
+    def main(self, files):
+	iters = [gff3.models(x) for x in files]
 	for m in gff3.merge(*iters):
 	    self.flush(m)
 	    if m.source == "MGI":
@@ -100,4 +120,9 @@ class ModelMerger:
 
 	self.flush()
 
-ModelMerger().main()
+    # end class ModelMerger
+
+#####
+
+if __name__ == "__main__":
+    ModelMerger().main(sys.argv[1:])

@@ -23,8 +23,8 @@ def readSeqIdFile(fname):
     idx = {}
     fd = open(fname, 'r')
     for line in fd:
-	seqid, mgiid, symbol, name, type, chr = line.strip().split(TAB)
-	idx[seqid] = [mgiid,seqid,type,symbol,name,"chr%s"%chr]
+	mgiid, seqid = line.strip().split(TAB)
+	idx[seqid] = [mgiid,seqid]
     return idx
 
 def merge(fname, idx):

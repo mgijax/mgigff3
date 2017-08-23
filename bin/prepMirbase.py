@@ -33,6 +33,8 @@ for f in gff3.iterate( sys.stdin ):
 	f[0] = f[0][3:]
     f[1] = "miRBase"
 
+    f.attributes.pop("Alias", None)
+
     if f[2] == "miRNA_primary_transcript":
 	#
 	# Gene feature
@@ -48,6 +50,7 @@ for f in gff3.iterate( sys.stdin ):
 	#
 	f[2] = 'miRNA_primary_transcript'
 	f.Parent = i
+	f.transcript_id = f.ID
 	nt = tCounts.setdefault(i,0) + 1
 	tCounts[i] = nt
 	f.ID = i + "_T"
@@ -62,5 +65,6 @@ for f in gff3.iterate( sys.stdin ):
 	del f.attributes['Derives_from']
 	f.ID = i
 	f.Parent = tMap[df]
+	f.exon_id = f.ID
 	sys.stdout.write(str(f))
 
