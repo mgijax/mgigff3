@@ -30,8 +30,8 @@
 # *9. strand - '+' or '-' for query strand. For translated alignments, second '+'or '-' is for genomic strand
 # *10. qName - Query sequence name
 # 11. qSize - Query sequence size
-# 12. qStart - Alignment start position in query
-# 13. qEnd - Alignment end position in query
+# 12. qStart - Alignment start position in query (0-based)
+# 13. qEnd - Alignment end position in query (actually, 1 beyond last aligned base)
 # *14. tName - Target sequence name
 # 15. tSize - Target sequence size
 # 16. tStart - Alignment start position in target
@@ -53,6 +53,17 @@ import gff3
 TAB	= '\t'
 NL	= '\n'
 COMMA	= ','
+
+def psl2gff(seqlen,start,end,strand):
+    if strand == "+":
+      gstart = start + 1
+      gend = end
+    elif strand == "-":
+      gstart = seqlen - end + 1
+      gend = seqlen - start
+    else:
+        raise RuntimeError("Unrecognized strand value.")
+    return (gstart,gend)
 
 class Alignment(types.ListType):
 
@@ -134,7 +145,7 @@ class Alignment(types.ListType):
 	return TAB.join(map(str,x)) + NL
 
     def matchLength(self):
-        return self.qEnd - self.qStart + 1
+        return self.qEnd - self.qStart
 
     def percentIdentity(self):
         return (100.0 * self.matches) / self.matchLength()
@@ -161,35 +172,44 @@ def iterate(input):
 	input.close()
 
 def toGff(input):
+    # for notes on converting between psl and gff coordinates see: http://genome.ucsc.edu/FAQ/FAQformat.html#format2
     alignments = iterate(input)
     idMaker = gff3.IdMaker()
     for a in alignments:
 	aid = idMaker.next("match")
+	(gs,ge) = psl2gff(a.qSize, a.qStart, a.qEnd, "+") # the alignment coords are always w.r.t + strand
         root = gff3.Feature([
 		a.tName,
 		"BlatAlignment",
 		"match",
-		a.tStart,
-		a.tEnd,
+		gs,
+		ge,
 		".",
 		a.strand,
 		'.',
-		{
+	        {
 		    'ID'    : aid,
 		    'qname' : a.qName,
 		    'matchLen' : a.matchLength(),
 		    'pctIdentity' : a.percentIdentity(),
-		    'pctLen' : a.percentLength()
+		    'pctLen' : a.percentLength(),
+		    'qStart' : a.qStart,
+		    'qEnd' : a.qEnd,
+		    'qSize' : a.qSize,
+		    'matches' : a.matches,
 		}
                ])
         yield root 
-	for i,tstart in enumerate(a.tStarts):
+	for i,qstart in enumerate(a.qStarts):
+	    # alignment seg coordinates are w.r.t. their actual strand (i.e., neg strand coords run in reverse)
+	    qend = qstart + a.blockSizes[i]
+	    (gs,ge) = psl2gff(a.qSize, qstart, qend, a.strand)
 	    part = gff3.Feature([
 		a.tName,
 		"BlatAlignment",
 		"match_part",
-		tstart,
-		tstart + a.blockSizes[i] - 1,
+		gs,
+		ge,
 		".",
 		a.strand,
 		'.',
