@@ -12,6 +12,7 @@ MKDIR=mkdir
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PYTHONPATH=${DIR}/lib:${PYTHONPATH:-.}
 
+#
 BIN=${DIR}
 WORKINGDIR=${DIR}/../work
 ${MKDIR} -p ${WORKINGDIR}
@@ -31,7 +32,7 @@ function logit {
     echo `date` $1 >> ${LOGFILE}
 }
 
-export DIR BIN PYTHONPATH WORKINGDIR CACHEDIR DATADIR LOGFILE SORT
+export DIR BIN PYTHONPATH WORKINGDIR CACHEDIR DATADIR LOGFILE SORT GREP SORTCMD SPLIT
 
 nargs=$#
 

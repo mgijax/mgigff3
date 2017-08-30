@@ -55,6 +55,8 @@ NL	= '\n'
 COMMA	= ','
 
 def psl2gff(seqlen,start,end,strand):
+    return (start+1,end)
+    '''
     if strand == "+":
       gstart = start + 1
       gend = end
@@ -64,6 +66,7 @@ def psl2gff(seqlen,start,end,strand):
     else:
         raise RuntimeError("Unrecognized strand value.")
     return (gstart,gend)
+    '''
 
 class Alignment(types.ListType):
 
@@ -177,7 +180,7 @@ def toGff(input):
     idMaker = gff3.IdMaker()
     for a in alignments:
 	aid = idMaker.next("match")
-	(gs,ge) = psl2gff(a.qSize, a.qStart, a.qEnd, "+") # the alignment coords are always w.r.t + strand
+	(gs,ge) = psl2gff(a.tSize, a.tStart, a.tEnd, "+") # the alignment coords are always w.r.t + strand
         root = gff3.Feature([
 		a.tName,
 		"BlatAlignment",
@@ -200,10 +203,10 @@ def toGff(input):
 		}
                ])
         yield root 
-	for i,qstart in enumerate(a.qStarts):
+	for i,tstart in enumerate(a.tStarts):
 	    # alignment seg coordinates are w.r.t. their actual strand (i.e., neg strand coords run in reverse)
-	    qend = qstart + a.blockSizes[i]
-	    (gs,ge) = psl2gff(a.qSize, qstart, qend, a.strand)
+	    tend = tstart + a.blockSizes[i]
+	    (gs,ge) = psl2gff(a.tSize, tstart, tend, a.strand)
 	    part = gff3.Feature([
 		a.tName,
 		"BlatAlignment",
@@ -215,7 +218,7 @@ def toGff(input):
 		'.',
 		{
 		    'ID'    : idMaker.next("match_part"),
-		    'Parent': aid,
+		    'Parent': [ aid ],
 		    'qname' : a.qName
 		}
 	       ])

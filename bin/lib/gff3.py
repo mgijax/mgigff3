@@ -599,7 +599,7 @@ def formatColumn9(vals):
 	if x:
 	    parts.append(formatAttribute(n,x))
     for n,v in vals.iteritems():
-	if n not in PRE and v:
+	if n not in PRE and v not in [None, '']:
 	    parts.append(formatAttribute(n,v))
     ret = C9SEP.join(parts)
     return ret
