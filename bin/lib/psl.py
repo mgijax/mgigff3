@@ -192,7 +192,7 @@ def toGff(input):
 		'.',
 	        {
 		    'ID'    : aid,
-		    'qname' : a.qName,
+		    'qName' : a.qName,
 		    'matchLen' : a.matchLength(),
 		    'pctIdentity' : a.percentIdentity(),
 		    'pctLen' : a.percentLength(),
@@ -219,7 +219,7 @@ def toGff(input):
 		{
 		    'ID'    : idMaker.next("match_part"),
 		    'Parent': [ aid ],
-		    'qname' : a.qName
+		    'qName' : a.qName
 		}
 	       ])
 	    yield part

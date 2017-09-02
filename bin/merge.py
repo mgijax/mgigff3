@@ -34,7 +34,7 @@ class ModelMerger:
     def mergeModels(self, m, f):
 	m.start = min(m.start, f.start)
 	m.end   = max(m.end,   f.end)
-	feats = gff3.flattenModel(f)
+	feats = gff3.copyModel(gff3.flattenModel(f))
 	for f2 in feats:
 	    f2.attributes["mgi_id"] = m.curie
 	f._merged.append(m.curie)
@@ -63,7 +63,7 @@ class ModelMerger:
 	    if f and f.start - m.end < self.windowSize:
 		break
 	    for xr in m.attributes.get("Dbxref",[]):
-	        if not xr in m._merged:
+	        if xr and xr not in m._merged:
 		    self.log("Dangling reference (%s) in %s\n" % (xr, m.curie))
 	    flushed.append(m)
 	    self.pendingMgi.pop(0)

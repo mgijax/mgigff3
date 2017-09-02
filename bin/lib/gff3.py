@@ -204,6 +204,8 @@ class Feature(types.ListType):
     def __setattr__(self, name, value):
 	if (name=="start" or name=="end") and value != ".":
 	    value = int(value)
+	elif name=="Parent" and type(value) is types.StringType:
+	    value = [ value ]
 	i = Feature.field2index.get(name,None)
 	if i is None:
 	    self[8][name] = value
@@ -215,12 +217,12 @@ class Feature(types.ListType):
 
     # Computes and returns the amount of overlap between two features.
     # Nonoverlapping (disjoint) features have a negative overlap equal to the distance
-    # between them.
+    # between them. Abutting features have 0 overlap.
     # 
     def overlap( self, f ):
         return min(self.end, f.end) - max(self.start, f.start) + 1
 
-    # Returns true if this feature overlaps f by at least a specified about.
+    # Returns true iff this feature overlaps f by at least a specified about.
     # Args:
     #   f - (required) the other Feature to compare to
     #	minOverlaps - (optional) the minimum amount the features must
@@ -418,11 +420,16 @@ def reassignIDs(feats, idMaker):
     #
     for f in feats:
 	pids = f.Parent if 'Parent' in f.attributes else []
-	f.Parent = [ idmap[pid] for pid in pids ]
+	try:
+	    f.Parent = [ idmap[pid] for pid in pids ]
+	except KeyError as e:
+	    print "ERROR"
+	    for f in feats:
+		print f
+	    raise e
 
 #----------------------------------------------------
-def copyModel(mfeats, idMaker = None):
-  if idMaker is None: idMaker = IdMaker()
+def copyModel(mfeats):
   copy = [ Feature(f) for f in mfeats ]
   crossReference(copy)
   return copy

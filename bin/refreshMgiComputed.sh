@@ -20,13 +20,15 @@ GREP=grep
 #
 # 1. generate a file of mgi_id/seq_id pairs.
 ${PYTHON24} ${BIN}/prepMgiComputed.py | ${SORT} > ${WORKINGDIR}/mgiComputed.seqids.txt
+
 # 2a. feed the sequence ids (2nd column) to the fetch script
 # this gets the sequences from ncbi and writes to a fasta file
-${CUT} -f 1  ${WORKINGDIR}/mgiComputed.seqids.txt | head -100 | ${PYTHON} seqid2fa.py - - > ${CACHEDIR}/mgiComputed.seqs.fa
+${CUT} -f 1  ${WORKINGDIR}/mgiComputed.seqids.txt | ${PYTHON} seqid2fa.py - ${CACHEDIR}/mgiComputed.seqs.fa
 
 # 2b. Blat the sequences against the mouse genome assembly
-# 3a. Use pslreps to filter the results to single best hits
 ${GFCLIENT} -nohead -minIdentity=95 ${BLAT_HOST} ${BLAT_PORT} / ${CACHEDIR}/mgiComputed.seqs.fa ${WORKINGDIR}/mgiComputed.blat.psl
+
+# 3a. Use pslreps to filter the results to single best hits
 ${PSLREPS} -singleHit -nohead ${WORKINGDIR}/mgiComputed.blat.psl ${WORKINGDIR}/mgiComputed.pslreps.psl ${WORKINGDIR}/mgiComputed.pslreps.psr
 
 # Extracts the list of sequence ids for records in a fasta file

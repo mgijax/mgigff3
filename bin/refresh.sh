@@ -80,28 +80,28 @@ logit "Starting refresh..."
 # MGI
 if [ $nargs -eq 0 -o $domgi == T ]; then
     logit 'prepMgi...'
-    ${PYTHON} ${BIN}/prepMgi.py | ${SORTCMD} | ${SPLIT} -t "mgi.chr%s.gff" 
+    ${PYTHON} ${BIN}/prepMgi.py 2>> ${LOGFILE} | ${SORTCMD} | ${SPLIT} -t "mgi.chr%s.gff" 
 fi
 
 ########
 # MGI computed
 if [ $nargs -eq 0 -o $domgicomputed == T ]; then
     logit "prepMgiComputed..."
-    prepMgiComputed.sh
+    refreshMgiComputed.sh 2>> ${LOGFILE}
 fi
 
 ########
 # NCBI
 if [ $nargs -eq 0 -o $doncbi == T ]; then
     logit 'prepNcbi...'
-    ${PYTHON} ${BIN}/prepNcbi.py < ${DATADIR}/ref_GRCm38.p4_top_level.gff3 | ${SPLIT} -t "ncbi.chr%s.gff"
+    ${PYTHON} ${BIN}/prepNcbi.py 2>> ${LOGFILE} < ${DATADIR}/ref_GRCm38.p4_top_level.gff3 | ${SPLIT} -t "ncbi.chr%s.gff"
 fi
 
 ########
 # miRBase
 if [ $nargs -eq 0 -o $domirbase == T ]; then
     logit 'prepMirbase...'
-    ${PYTHON} ${BIN}/prepMirbase.py < ${DATADIR}/miRBase21_mmu.gff3 | ${SPLIT} -t "mirbase.chr%s.gff"
+    ${PYTHON} ${BIN}/prepMirbase.py 2>> ${LOGFILE} < ${DATADIR}/miRBase21_mmu.gff3 | ${SPLIT} -t "mirbase.chr%s.gff"
 fi
 
 ########
@@ -113,7 +113,7 @@ if [ $nargs -eq 0 -o $doensembl == T ]; then
     #
     #${CURL} ${ENSEMBLurl} | ${GUNZIP} > ${DATADIR}/${ENSEMBLfile}
     logit 'prepEnsembl...'
-    ${PYTHON} ${BIN}/prepEnsembl.py < ${DATADIR}/${ENSEMBLfile} | ${SPLIT} -t "ensembl.chr%s.gff"
+    ${PYTHON} ${BIN}/prepEnsembl.py 2>> ${LOGFILE} < ${DATADIR}/${ENSEMBLfile} | ${SPLIT} -t "ensembl.chr%s.gff"
 fi
 
 ########
