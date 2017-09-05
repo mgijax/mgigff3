@@ -33,8 +33,8 @@ def pcounts(msg, counts):
 	print "\t"+k, counts[k]
  
 def main():
-    for m in gff3.models(sys.stdin, flatten=True):
-	for f in m:
+    for mfeats in gff3.models(sys.stdin, flatten=True):
+	for f in mfeats:
 	    if len(f.parents) == 0:
 		count(f, [f.type])
     pcounts("Freq distr of root node types:", roots)

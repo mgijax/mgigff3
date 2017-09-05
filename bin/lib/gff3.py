@@ -423,7 +423,6 @@ def reassignIDs(feats, idMaker):
 	try:
 	    f.Parent = [ idmap[pid] for pid in pids ]
 	except KeyError as e:
-	    print "ERROR"
 	    for f in feats:
 		print f
 	    raise e

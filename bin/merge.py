@@ -23,6 +23,18 @@ class ModelMerger:
 	for f in feats:
 	    sys.stdout.write(str(f))
 
+    def propagatePartIds(self, m):
+	if not "gene_id" in m.attributes:
+	    return
+        gene_id = m.gene_id
+	for t in m.children:
+	    t.gene_id = gene_id
+	    tid = t.transcript_id if "transcript_id" in t.attributes else None
+	    for e in t.children:
+	        e.gene_id = gene_id
+		if tid:
+		    e.transcript_id = tid
+
     # Merges model f into m. f is the root of a gene model from some provider. 
     # m is the MGI feature and is the root of a merged model hierarchy that
     # grows as models from multiple providers are merged.
@@ -35,8 +47,7 @@ class ModelMerger:
 	m.start = min(m.start, f.start)
 	m.end   = max(m.end,   f.end)
 	feats = gff3.copyModel(gff3.flattenModel(f))
-	for f2 in feats:
-	    f2.attributes["mgi_id"] = m.curie
+	#
 	f._merged.append(m.curie)
 	m._merged.append(f.curie)
 	for c in feats[0].children:
@@ -66,6 +77,7 @@ class ModelMerger:
 	        if xr and xr not in m._merged:
 		    self.log("Dangling reference (%s) in %s\n" % (xr, m.curie))
 	    flushed.append(m)
+	    m.attributes.pop('_merged', None)
 	    self.pendingMgi.pop(0)
 
 	while len(self.pendingNonMgi):
@@ -74,13 +86,14 @@ class ModelMerger:
 		break
 	    if len(m.attributes.get("_merged", [])) == 0:
 		self.log("Orphan model: ID=%s curie=%s type=%s\n" % (m.ID, m.curie, m.type))
+	    m.attributes.pop('_merged', None)
 	    self.pendingNonMgi.pop(0)
 
 	for m in flushed:
-	    m.attributes.pop('_merged', None)
-	    feats = gff3.flattenModel(m)
-	    gff3.reassignIDs(feats, self.idMaker)
-	    self.printModel(feats)
+	    self.propagatePartIds(m)
+	    gff3.reassignIDs(gff3.flattenModel(m), self.idMaker)
+
+	return flushed
 
     # Adds MGI feature m to the pending queue. Merges in any nonMgi models from the
     # other queue that are referenced in Dbxrefs.
@@ -102,6 +115,21 @@ class ModelMerger:
 	    if f.curie in m.attributes.get("Dbxref",[]):
 		self.mergeModels(m, f)
 
+    # Validates a model. If valid, returns the model, otherwise returns None.
+    # 
+    def validate(self, m):
+	if len(m.children) == 0:
+	    self.log("Gene model is not 3 levels.")
+	    self.log(str(m))
+	    return None
+	for c in m.children:
+	    if len(c.children) == 0:
+	        self.log("Gene model is not 3 levels.")
+		self.log(str(m))
+		self.log(str(c))
+		return None
+        return m
+
     # Merges the sorted gff files listed on the command line into a single stream,
     # then merges features based on Dbxrefs. Maintains a kind of moving window in the
     # form of two "pending queues". As items are consumed from the sorted stream, they are
@@ -109,20 +137,27 @@ class ModelMerger:
     # current position (start coordinate of the latest input feature) moves beyond 
     # their endpoints. 
     #
-    def main(self, files):
+    def merge(self, files):
 	iters = [gff3.models(x) for x in files]
 	for m in gff3.merge(*iters):
-	    self.flush(m)
+	    for mm in self.flush(m):
+	        if self.validate(mm):
+		    yield mm
 	    if m.source == "MGI":
 		self.addMgi(m)
 	    else:
 		self.addNonMgi(m)
 
-	self.flush()
+	for mm in self.flush():
+	    if self.validate(mm):
+	        yield mm
 
     # end class ModelMerger
 
 #####
 
 if __name__ == "__main__":
-    ModelMerger().main(sys.argv[1:])
+    for m in ModelMerger().merge(sys.argv[1:]):
+        for f in gff3.flattenModel(m):
+	    sys.stdout.write(str(f))
+	sys.stdout.write("###\n")
