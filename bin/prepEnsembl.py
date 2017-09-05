@@ -5,6 +5,7 @@ from OrderedSet import OrderedSet
 from itertools import ifilter
 
 EXCLUDE_SOURCES = OrderedSet([
+    "mirbase"
 ])
 EXCLUDE_TYPES = OrderedSet([
     "chromosome",
@@ -18,7 +19,7 @@ filtFcn = lambda f: f.source not in EXCLUDE_SOURCES and f.type not in EXCLUDE_TY
 feats = ifilter(filtFcn, gff3.iterate(sys.stdin))
 for m in gff3.models(feats):
     for f in gff3.flattenModel(m):
-	if not f.type in EXCLUDE_TYPES:
+	if not f.type in EXCLUDE_TYPES and not f.source in EXCLUDE_SOURCES:
 	    f.source = "ENSEMBL"
 	    if len(f.parents) == 0:
 	        f.attributes["curie"] = "ENSEMBL:" + f.ID.split(":")[1]
