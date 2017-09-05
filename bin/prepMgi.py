@@ -56,6 +56,7 @@ def main():
 		{
 		    "ID": f.primaryIdentifier,
 		    "curie":  f.primaryIdentifier,
+		    "gene_id": f.primaryIdentifier,
 		    "so_term_name" : f.sequenceOntologyTerm.name,
 		    "Name": f.symbol,
 		    "description": f.name,
