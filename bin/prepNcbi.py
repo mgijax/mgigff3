@@ -126,6 +126,8 @@ class ConvertNCBI:
 
     def main(self):
 	for m in gff3.models(self.pre(sys.stdin)):
+	   if m.attributes.get("so_term_name",None) == "miRNA":
+	       continue
 	   for f in gff3.flattenModel(m):
 	       print str(f),
 
