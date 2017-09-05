@@ -58,9 +58,8 @@ for f in gff3.iterate( sys.stdin ):
 	sys.stdout.write(str(f))
     elif f[2] == "miRNA":
 	#
-	# Exon feature
+	# Exon-level feature
 	#
-	f[2] = 'exon'
 	df = f.Derives_from
 	del f.attributes['Derives_from']
 	f.ID = i
