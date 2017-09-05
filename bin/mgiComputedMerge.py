@@ -37,7 +37,7 @@ class MgiComputedMerger:
 		feat.ID = mgiid
 		feat.source = "MGI"
 		feat.type = "gene"	# FIXME
-		feat.currie = mgiid
+		feat.curie = mgiid
 		feat.Name = symbol
 		feat.description = name
 		feat.mcv_type = mcv_type
