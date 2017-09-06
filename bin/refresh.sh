@@ -19,7 +19,6 @@ BIN=${DIR}
 DATADIR=${DIR}/../data
 #DATADIR=/data/research/mouse_build_38_external/original_annotations
 WORKINGDIR=${DIR}/../work
-CACHEDIR=${DIR}/../cache
 PYTHONPATH=${DIR}/lib:${PYTHONPATH:-.}
 
 #
@@ -144,8 +143,9 @@ fi
 ########
 # EXOME phase
 if [ $nargs -eq 0 -o $doexome == T ]; then
-    logit "creating MGI exome file..."
-    ${PYTHON} ${BIN}/exome.py ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.exome.gff3 2>> ${LOGFILE}
+    logit "exome phase not implemented yet"
+    #logit "creating MGI exome file..."
+    #${PYTHON} ${BIN}/exome.py ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.exome.gff3 2>> ${LOGFILE}
 fi
 
 ########

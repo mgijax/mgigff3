@@ -23,18 +23,18 @@ ${PYTHON24} ${BIN}/prepMgiComputed.py | ${SORT} > ${WORKINGDIR}/mgiComputed.seqi
 
 # 2a. feed the sequence ids (2nd column) to the fetch script
 # this gets the sequences from ncbi and writes to a fasta file
-${CUT} -f 1  ${WORKINGDIR}/mgiComputed.seqids.txt | ${PYTHON} seqid2fa.py - ${CACHEDIR}/mgiComputed.seqs.fa
+${CUT} -f 1  ${WORKINGDIR}/mgiComputed.seqids.txt | ${PYTHON} seqid2fa.py - ${WORKINGDIR}/mgiComputed.seqs.fa
 
 # 2b. Blat the sequences against the mouse genome assembly
-${GFCLIENT} -nohead -minIdentity=95 ${BLAT_HOST} ${BLAT_PORT} / ${CACHEDIR}/mgiComputed.seqs.fa ${WORKINGDIR}/mgiComputed.blat.psl
+${GFCLIENT} -nohead -minIdentity=95 ${BLAT_HOST} ${BLAT_PORT} / ${WORKINGDIR}/mgiComputed.seqs.fa ${WORKINGDIR}/mgiComputed.blat.psl
 
 # 3a. Use pslreps to filter the results to single best hits
 ${PSLREPS} -singleHit -nohead ${WORKINGDIR}/mgiComputed.blat.psl ${WORKINGDIR}/mgiComputed.pslreps.psl ${WORKINGDIR}/mgiComputed.pslreps.psr
 
 # Extracts the list of sequence ids for records in a fasta file
-#${GREP} "^>" ${CACHEDIR}/mgiComputed.seqs.fa | ${SED} 's/>\([^. ]*\).*/\1/' > ${CACHEDIR}/ids.txt
+#${GREP} "^>" ${WORKINGDIR}/mgiComputed.seqs.fa | ${SED} 's/>\([^. ]*\).*/\1/' > ${WORKINGDIR}/ids.txt
 
 # 3b. Convert the alignments to GFF3 hierarchies and attach the corresponding MGI id
-${PYTHON} mgiComputedMerge.py ${WORKINGDIR}/mgiComputed.pslreps.psl ${WORKINGDIR}/mgiComputed.seqids.txt | ${SPLIT} -t "mgicomputed.chr%s.gff"
+${PYTHON} mgiComputedMerge.py ${WORKINGDIR}/mgiComputed.pslreps.psl ${WORKINGDIR}/mgiComputed.seqids.txt | ${SPLITCMD} -t "mgicomputed.chr%s.gff"
 
 
