@@ -124,9 +124,29 @@ class ConvertNCBI:
 	    if self.process(f):
 	       yield f
 
+    def log(self, s):
+        sys.stderr.write(s)
+
+    # Filters out non-3-level gene models (per AGR).
+    # 
+    def filter3(self, m):
+	kids = list(m.children)
+	for c in kids:
+	    if len(c.children) == 0:
+	        self.log("Gene model is not 3 levels. Culling:")
+		self.log(str(c))
+		m.children.remove(c)
+	if len(m.children) == 0:
+	    self.log("Gene model is not 3 levels. Culling:")
+	    self.log(str(m))
+	    return None
+        return m
+
     def main(self):
 	for m in gff3.models(self.pre(sys.stdin)):
 	   if m.attributes.get("so_term_name",None) == "miRNA":
+	       continue
+	   if not self.filter3(m):
 	       continue
 	   for f in gff3.flattenModel(m):
 	       print str(f),

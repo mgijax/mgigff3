@@ -32,8 +32,8 @@ def pcounts(msg, counts):
     for k in ks:
 	print "\t"+k, counts[k]
  
-def main():
-    for mfeats in gff3.models(sys.stdin, flatten=True):
+def main(features):
+    for mfeats in gff3.models(features, flatten=True):
 	for f in mfeats:
 	    if len(f.parents) == 0:
 		count(f, [f.type])
@@ -43,4 +43,4 @@ def main():
     pcounts("Freq distr of root-to-leaf paths:", paths)
 
 
-main()
+main(sys.argv[1] if len(sys.argv) == 2 else sys.stdin)

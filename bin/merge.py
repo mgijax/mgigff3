@@ -115,19 +115,12 @@ class ModelMerger:
 	    if f.curie in m.attributes.get("Dbxref",[]):
 		self.mergeModels(m, f)
 
-    # Validates a model. If valid, returns the model, otherwise returns None.
-    # 
+    # Last check
     def validate(self, m):
 	if len(m.children) == 0:
-	    self.log("Gene model is not 3 levels.")
+	    self.log("Gene model is not 3 levels: culling:")
 	    self.log(str(m))
 	    return None
-	for c in m.children:
-	    if len(c.children) == 0:
-	        self.log("Gene model is not 3 levels.")
-		self.log(str(m))
-		self.log(str(c))
-		return None
         return m
 
     # Merges the sorted gff files listed on the command line into a single stream,
@@ -141,7 +134,7 @@ class ModelMerger:
 	iters = [gff3.models(x) for x in files]
 	for m in gff3.merge(*iters):
 	    for mm in self.flush(m):
-	        if self.validate(mm):
+		if self.validate(mm):
 		    yield mm
 	    if m.source == "MGI":
 		self.addMgi(m)

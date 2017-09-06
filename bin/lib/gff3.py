@@ -509,7 +509,7 @@ def index(features, id2feature=None):
     return id2feature
 
 #----------------------------------------------------
-# Turns all Parent attributes in a group of features in actual object references.
+# Turns all Parent attributes in a group of features into actual object references.
 # Each feature gets two new attributes: parents and children: each feature points to
 # 0 or more parent features, and is the parent of 0 or more children.
 # Parents and children attributes are implemented as OrderedSets.

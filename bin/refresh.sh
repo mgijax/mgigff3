@@ -30,7 +30,6 @@ SPLITCMD="${PYTHON} ${BIN}/splitGff.py -d ${WORKINGDIR}"
 
 #
 ${MKDIR} -p ${WORKINGDIR}
-${MKDIR} -p ${CACHEDIR}
 
 LOGFILE=${WORKINGDIR}/LOG.${DATESTAMP}
 ${TOUCH} ${LOGFILE}
@@ -39,7 +38,7 @@ function logit {
     echo `date` $1 >> ${LOGFILE}
 }
 
-export DIR BIN PYTHONPATH WORKINGDIR CACHEDIR DATADIR LOGFILE SORT GREP SORTCMD SPLITCMD
+export DIR BIN PYTHONPATH WORKINGDIR DATADIR LOGFILE SORT GREP SORTCMD SPLITCMD
 
 nargs=$#
 
@@ -85,6 +84,7 @@ done
 
 ########
 
+logit "================================================================================="
 logit "Starting refresh..." 
 
 ########
