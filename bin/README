@@ -1,0 +1,38 @@
+
+This product implements a pipeline to generate the MGI GFF3 file.
+As of this writing (Sept 7, 2017) the output is intended for AGR, but the goal is to make this the one we distribute on the ftp site.
+
+This is a reimplementation of the original MGI GFF3 process. The main goals were to be more modular, light weight, and easier to understand and maintain
+An additional benefit is that the script is highly parallelizable (TODO).
+
+The new process is divided into distinct phases.
+    * download - (TODO) files are downloaded/generated into a data directory. This phase is currently diabled; you have to point it to an already populated data directoty.
+    * prep - each provider's 'raw' gff3 file is processed to generate one in a standardized format. (See scripts named "prepXxx.py" where Xxx is a provider name, e.g "prepNcbi.py".)
+    * merge - the prep'd gff3 models are merged to generate the MGI.gff3 file. (see merge.py) Implementation note: the prep'd gff3's are split into separate files by chromosome. The merging is done a chromosome at a time. These files are then concatenated to generate the final output.
+    * exome - the MGI exome file is generated from MGI.gff3	(see exome.py)
+    * distrib - the output files are copied to the distribution directory (TODO)
+
+To run the pipeline from start to finish:
+    $ refresh.sh
+
+To run an individual step(s):
+    $ refresh.sh name [name ...]
+
+Valid names are: mgi, ncbi, ensembl, mirbase, mgicomputed, merge, exome
+(More to be added: download, distrib). 
+Naming a provider runs its prep script:
+    * ncbi, ensembl, mirbase - these prep scripts massage the gff3 file that was downloaded to the data directory
+    * mgi - this prep script queries MGI and write a gff3 file of genes
+    * mgicomputed - this prep script tries to compute "models" for genes that don't have a provider model
+	1. Queries MGI for genes without a model (no model ID attached). 
+	   Also gets associated sequences (IDs) where the seqs meet certain minimum requirements. 
+	2. Takes the sequence IDs from step 1 and fetches the actual sequences from NCBI.
+	3. Blats each sequence from step 2 against the mouse assembly.
+	4. Filters the alignments from step 3 for uniqueness and overall quality.
+	5. Combines the alignments from step 4 with the associated genes from step 1. Generates a gff3 file
+	   of computed models. The models have 3 levels:
+	      1. gene - the MGI gene. 
+	      2. match - corresponds to one sequence alignment. Can be multiple for a gene (different sequences).
+	      3. match_part - a block within the alignment. Often multiple for an alignments.
+
+
