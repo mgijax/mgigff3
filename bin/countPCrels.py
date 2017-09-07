@@ -19,28 +19,27 @@ def count(f, path):
         mids[f.type] = mids.get(f.type,0) + 1
     if len(f.children) == 0:
 	leaves[f.type] = leaves.get(f.type,0) + 1
-	pth = ' -> '.join(path)
+	pth = '|'.join(path)
 	paths[pth] = paths.get(pth, 0) + 1
     else:
 	for c in f.children:
 	    count(c, path+[c.type])
 
 def pcounts(msg, counts):
-    print msg
     ks = counts.keys()
     ks.sort()
     for k in ks:
-	print "\t"+k, counts[k]
+	print "\t".join([msg, k, str(counts[k])])
  
 def main(features):
     for mfeats in gff3.models(features, flatten=True):
 	for f in mfeats:
 	    if len(f.parents) == 0:
 		count(f, [f.type])
-    pcounts("Freq distr of root node types:", roots)
-    pcounts("Freq distr of midlevel node types:", mids)
-    pcounts("Freq distr of leaf node types:", leaves)
-    pcounts("Freq distr of root-to-leaf paths:", paths)
+    pcounts("root", roots)
+    pcounts("mid", mids)
+    pcounts("leaf", leaves)
+    pcounts("path", paths)
 
 
 main(sys.argv[1] if len(sys.argv) == 2 else sys.stdin)

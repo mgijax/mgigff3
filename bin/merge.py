@@ -1,8 +1,18 @@
 #
 # merge.py
 #
-# Merges n sorted gff files into one and merges models from other providers under the corresponding MGI feature.
+# Merges models into the MGI gene.
+# 
+#	$ python merge.py file1 file2 [file3 ...]
 #
+# The files must contain data for a single chromosome (and all must be the same chromosome!)
+# Example:
+#	$ python merge.py ../working/mgi.chr14.gff ../working/ncbi.chr14.gff > test.gff
+# Each file must be sorted appropriately. Model features clustered, no forward Parent references, etc,
+#
+# This script merges at two levels: 
+#    1. merges n input files into one output file 
+#    2. merges m models of a gene from m providers into a single model.
 #
 
 import gff3
@@ -17,12 +27,20 @@ class ModelMerger:
 	self.pendingNonMgi = []
 	self.windowSize = wsize
 
+    # Message logger
+    #
+    def log(self, m):
+        sys.stderr.write(m)
+
     # Prints a model to standard out. 
     #
     def printModel(self, feats):
 	for f in feats:
 	    sys.stdout.write(str(f))
 
+    # Propagates each gene_id to all features in the gene.
+    # Propagates transcript_id to all features in the transcript.
+    #
     def propagatePartIds(self, m):
 	if not "gene_id" in m.attributes:
 	    return
@@ -56,16 +74,11 @@ class ModelMerger:
 	    c.parents.add(m)
 	    m.children.add(c)
 
-    # Message logger
-    #
-    def log(self, m):
-        sys.stderr.write(m)
-
     # Flushes the current pending queues (pendingMgi and pendingNonMgi)
     # based on the latest feature from the merged stream.
     # If the start position of f is greater then the end position of 
     # an earlier cached feature, m, then neither f nor anything that 
-    # comes after f overlaps m.
+    # comes after f overlaps m. Therefore m can be flushed from the queue.
     #
     def flush(self, f=None):
 	flushed = []

@@ -98,7 +98,7 @@ fi
 # MGI computed
 if [ $nargs -eq 0 -o $domgicomputed == T ]; then
     logit "prepMgiComputed..."
-    refreshMgiComputed.sh 2>> ${LOGFILE}
+    ${BIN}/refreshMgiComputed.sh 2>> ${LOGFILE}
 fi
 
 ########
@@ -138,6 +138,23 @@ if [ $nargs -eq 0 -o $domerge == T ]; then
     done
     logit "catting files..."
     cat ${WORKINGDIR}/chr*.gff | ${PYTHON} ${BIN}/reassignIDs.py > ${WORKINGDIR}/MGI.gff3 2>> ${LOGFILE}
+
+    # Extract a sampling into a separate file.
+    #
+    # MGI:3528744 Xkr4 protein coding
+    # MGI:5530644 Mir6341 miRNA gene
+    # MGI:3643257 Gm7357 pseudogene
+    #   
+    # Gene with two ENSEMBL ids:
+    # MGI:105105 Rprl1  RNase P RNA gene, has 2 ensembl IDs, BIOTYPE CONFLICT
+    #
+    # Two genes with same NCBI id: 108168131
+    # MGI:4413970 n-TKttt23 tRNA gene
+    # MGI:5623715 Gm40830 lncRNA gene, BIOTYPE CONFLICT
+    #
+    MGIIDS="MGI:3528744\|MGI:5530644\|MGI:3643257\|MGI:105105\|MGI:4413970\|MGI:5623715"
+    logit "extracting sample..."
+    ${GREP} "${MGIIDS}" ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.sample.gff3
 fi
 
 ########
