@@ -3,6 +3,7 @@
 set -o pipefail
 
 PYTHON=python
+PYTHON24="python2.4"
 CURL=curl
 CP=cp
 GUNZIP=gunzip
@@ -11,6 +12,14 @@ SORT=sort
 MKDIR=mkdir
 DATE=date
 TOUCH=touch
+CUT=cut
+SED=sed
+GFCLIENT=gfClient
+PSLREPS=pslReps
+GREP=grep
+
+BLAT_HOST="bhmgiapp01.jax.org"
+BLAT_PORT="9038"
 
 # The chromosomes and their order.
 CHRS=( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 X Y MT )
@@ -49,4 +58,5 @@ function checkExit {
 }
 
 export DIR BIN PYTHONPATH WORKINGDIR DATADIR LOGFILE SORT GREP SORTCMD SPLITCMD
+export TOUCH CUT SED GFCLIENT PSLREPS GREP BLAT_HOST  BLAT_HOST
 

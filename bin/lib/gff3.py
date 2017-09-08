@@ -411,7 +411,7 @@ def reassignIDs(feats, idMaker):
     for f in feats:
 	if 'ID' not in f.attributes:
 	    f.ID = idMaker.next(f.type)
-	elif f.ID in idmap:
+	elif f.ID in idmap: # handle CDSs - mult feats w/ same ID
 	    f.ID = idmap[f.ID]
 	else:
 	    i = idMaker.next(f.type)

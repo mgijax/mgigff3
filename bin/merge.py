@@ -74,6 +74,32 @@ class ModelMerger:
 	    c.parents.add(m)
 	    m.children.add(c)
 
+    #
+    def reassignIDs(self, m):
+	idMap = {}
+	idCounts = {}
+	feats = gff3.flattenModel(m)
+        for f in feats:
+	    # handle CDSs, where multiple features have same ID.
+	    if f.attributes.get("ID", None) in idMap:
+	        f.ID = idMap[f.ID]
+		continue
+	    # generate ID
+	    tp = f.type
+	    tp = tp.replace("pseudogenic_","")
+	    if tp.endswith("RNA") or "transcript" in tp:
+	        tp = "transcript"
+	    tp = tp[0].lower()
+	    count = idCounts[tp] = idCounts.setdefault(tp, 0) + 1
+	    newid = m.curie if f is m else "%s.%s%d" % (m.curie,tp,count)
+	    # update f, idMap
+	    if "ID" in f.attributes: idMap[f.ID] = newid
+	    f.ID = newid
+	# change Parent refs accordingly
+	for f in feats:
+	    if "Parent" in f.attributes:
+	        f.Parent = [ idMap[pid] for pid in f.Parent ]
+
     # Flushes the current pending queues (pendingMgi and pendingNonMgi)
     # based on the latest feature from the merged stream.
     # If the start position of f is greater then the end position of 
@@ -104,7 +130,8 @@ class ModelMerger:
 
 	for m in flushed:
 	    self.propagatePartIds(m)
-	    gff3.reassignIDs(gff3.flattenModel(m), self.idMaker)
+	    #gff3.reassignIDs(gff3.flattenModel(m), self.idMaker)
+	    self.reassignIDs(m)
 
 	return flushed
 
@@ -128,12 +155,10 @@ class ModelMerger:
 	    if f.curie in m.attributes.get("Dbxref",[]):
 		self.mergeModels(m, f)
 
-    # Last check
+    # Hook to do any last checking. 
+    # Return m if valid, else None.
+    #
     def validate(self, m):
-	if len(m.children) == 0:
-	    self.log("Gene model is not 3 levels: culling:")
-	    self.log(str(m))
-	    return None
         return m
 
     # Merges the sorted gff files listed on the command line into a single stream,

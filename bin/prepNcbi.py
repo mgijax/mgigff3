@@ -31,6 +31,7 @@ class ConvertNCBI:
     def __init__(self):
 	self.currentRegionId = None
 	self.currentRegion = None
+	self.transcriptCount = 0
 	
     def getGeneID(self, f):
 	ids = f.attributes.get('Dbxref',[])
@@ -127,25 +128,49 @@ class ConvertNCBI:
     def log(self, s):
         sys.stderr.write(s)
 
+    def checkPseudogene(self, m):
+        if not m.type == "pseudogene" or len(m.children) == 0:
+	    return
+	for c in m.children:
+	    if c.type != "exon":
+	        return
+	self.transcriptCount += 1
+        t = gff3.Feature(m)
+	t.ID = "inserted_transcript_%d" % self.transcriptCount
+	t.type = "pseudogenic_transcript"
+	t.Parent = [ m.ID ]
+	for c in m.children:
+	    c.Parent = [ t.ID ]
+	    c.type = "pseudogenic_exon"
+	gff3.crossReference([m, t] + list(m.children))
+        
     # Filters out non-3-level gene models (per AGR).
     # 
     def filter3(self, m):
+	if m.type != "gene":
+	    return m
+	if len(m.children) == 0:
+	    self.log("Gene model is 1 level. Culling: ")
+	    self.log(str(m))
+	    return None
 	kids = list(m.children)
 	for c in kids:
 	    if len(c.children) == 0:
-	        self.log("Gene model is not 3 levels. Culling:")
+		self.log("Leaf detected at level 2. Culling: ")
 		self.log(str(c))
 		m.children.remove(c)
 	if len(m.children) == 0:
-	    self.log("Gene model is not 3 levels. Culling:")
+	    self.log("No children remain. Culling: ")
 	    self.log(str(m))
 	    return None
         return m
 
     def main(self):
 	for m in gff3.models(self.pre(sys.stdin)):
+	   # filter out miRNAs. We'll get them only from mirbase for now.
 	   if m.attributes.get("so_term_name",None) == "miRNA":
 	       continue
+	   self.checkPseudogene(m)
 	   if not self.filter3(m):
 	       continue
 	   for f in gff3.flattenModel(m):

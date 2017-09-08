@@ -1,15 +1,6 @@
 #!/usr/bin/bash
 
-PYTHON24="python2.4"
-
-BLAT_HOST="bhmgiapp01.jax.org"
-BLAT_PORT="9038"
-
-CUT=cut
-SED=sed
-GFCLIENT=gfClient
-PSLREPS=pslReps
-GREP=grep
+source config.sh
 
 # For the MGI genes that don't have a gene model from a provider, we generate ersatz models by:
 # 1. Finding "good" sequences
@@ -19,7 +10,11 @@ GREP=grep
 
 #
 # 1. generate a file of mgi_id/seq_id pairs.
+logit "Phase 2: getting MGI data..."
 ${PYTHON24} ${BIN}/prepMgiComputed.py | ${SORT} > ${WORKINGDIR}/mgiComputed.seqids.txt
+checkExit
+
+exit
 
 # 2a. feed the sequence ids (2nd column) to the fetch script
 # this gets the sequences from ncbi and writes to a fasta file

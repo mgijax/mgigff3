@@ -105,7 +105,8 @@ if [ $nargs -eq 0 -o $domerge == T ]; then
 	checkExit
     done
     logit "catting files..."
-    cat ${WORKINGDIR}/chr*.gff | ${PYTHON} ${BIN}/reassignIDs.py > ${WORKINGDIR}/MGI.gff3 2>> ${LOGFILE}
+    echo '##gff-version 3' > ${WORKINGDIR}/MGI.gff3
+    cat ${WORKINGDIR}/chr*.gff >> ${WORKINGDIR}/MGI.gff3 2>> ${LOGFILE}
     ${BIN}/sample.sh < ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.sample.gff3
     checkExit
 
