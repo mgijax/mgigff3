@@ -102,9 +102,14 @@ class ModelMerger:
 
     # Flushes the current pending queues (pendingMgi and pendingNonMgi)
     # based on the latest feature from the merged stream.
-    # If the start position of f is greater then the end position of 
-    # an earlier cached feature, m, then neither f nor anything that 
-    # comes after f overlaps m. Therefore m can be flushed from the queue.
+    # Returns the flushed items from the pendingMgi queue, i.e., the root
+    # features of the flushed models.
+    #
+    # Flushing depends of the fact the file is (roughly) sorted by increasing
+    # start position of the features. As each feature f is read from the input,
+    # the cache is scanned to see what can be flushed. For a given feature g in
+    # the cache, if g.end < f.start, then g is not overlapped by f and cannot
+    # be overlapped by anything following f, and so g can be flushed.
     #
     def flush(self, f=None):
 	flushed = []
@@ -130,7 +135,6 @@ class ModelMerger:
 
 	for m in flushed:
 	    self.propagatePartIds(m)
-	    #gff3.reassignIDs(gff3.flattenModel(m), self.idMaker)
 	    self.reassignIDs(m)
 
 	return flushed
@@ -159,6 +163,9 @@ class ModelMerger:
     # Return m if valid, else None.
     #
     def validate(self, m):
+	if len(m.children) == 0:
+	    self.log("Gene has no subfeatures. Culling: " + str(m))
+	    return None
         return m
 
     # Merges the sorted gff files listed on the command line into a single stream,

@@ -107,10 +107,14 @@ if [ $nargs -eq 0 -o $domerge == T ]; then
     logit "catting files..."
     echo '##gff-version 3' > ${WORKINGDIR}/MGI.gff3
     cat ${WORKINGDIR}/chr*.gff >> ${WORKINGDIR}/MGI.gff3 2>> ${LOGFILE}
+
+
+    logit "Generating sample file..."
     ${BIN}/sample.sh < ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.sample.gff3
     checkExit
 
     # Generate feature type profile
+    logit "Generating feature type profile..."
     ${PYTHON} ${BIN}/countPCrels.py < ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.counts.txt
     checkExit
 fi

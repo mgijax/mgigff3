@@ -12,6 +12,7 @@ roots = {}
 leaves = {}
 mids = {}
 paths = {}
+exemplars = {}
 def count(f, path):
     if len(f.parents) == 0:
 	roots[f.type] = roots.get(f.type,0) + 1
@@ -20,6 +21,7 @@ def count(f, path):
     if len(f.children) == 0:
 	leaves[f.type] = leaves.get(f.type,0) + 1
 	pth = '|'.join(path)
+	exemplars.setdefault(pth, f.ID)
 	paths[pth] = paths.get(pth, 0) + 1
     else:
 	for c in f.children:
@@ -40,6 +42,7 @@ def main(features):
     pcounts("mid", mids)
     pcounts("leaf", leaves)
     pcounts("path", paths)
+    pcounts("exemplars", exemplars)
 
 
 main(sys.argv[1] if len(sys.argv) == 2 else sys.stdin)
