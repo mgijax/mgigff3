@@ -30,6 +30,8 @@ BIN=${DIR}
 DATADIR=${DIR}/../data
 #DATADIR=/data/research/mouse_build_38_external/original_annotations
 WORKINGDIR=${DIR}/../work
+DISTDIR=${DIR}/../dist
+
 PYTHONPATH=${DIR}/lib:${PYTHONPATH:-.}
 
 #
@@ -46,17 +48,22 @@ LOGFILE=${WORKINGDIR}/LOG.${DATESTAMP}
 ${TOUCH} ${LOGFILE}
 
 function logit {
-    echo `date` $1 >> ${LOGFILE}
+    echo `date` "$*" >> ${LOGFILE}
 }
 
-function checkExit {
-    if [ $? -ne 0 ]
-    then
-	logit "Caught error code. Exiting..."
-	exit 1
+function die {
+    logit "$*"
+    exit 1
+}
+
+function assert {
+    test $2 $3 $4
+    if [ $? -ne 0 ]; then
+        die "FAILED ASSERTION: $1"
     fi
+    logit "OK:" $1
 }
 
 export DIR BIN PYTHONPATH WORKINGDIR DATADIR LOGFILE SORT GREP SORTCMD SPLITCMD
-export TOUCH CUT SED GFCLIENT PSLREPS GREP BLAT_HOST  BLAT_HOST
+export CP TOUCH CUT SED GFCLIENT PSLREPS GREP BLAT_HOST  BLAT_HOST
 
