@@ -59,9 +59,12 @@ function die {
 function assert {
     test $2 $3 $4
     if [ $? -ne 0 ]; then
-        die "FAILED ASSERTION: $1"
+        logit "FAILED ASSERTION: $1"
+	return 1
+    else
+	logit "OK:" $1
+	return 0
     fi
-    logit "OK:" $1
 }
 
 export DIR BIN PYTHONPATH WORKINGDIR DATADIR LOGFILE SORT GREP SORTCMD SPLITCMD

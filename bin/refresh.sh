@@ -11,6 +11,8 @@ doensembl=F
 domirbase=F
 domerge=F
 doexome=F
+dodistrib=F
+doagr=F
 
 until [ -z "$1" ]  # Until all parameters used up . . .
 do
@@ -35,6 +37,12 @@ do
         ;;
     exome)
 	doexome=T
+        ;;
+    distrib)
+	dodistrib=T
+        ;;
+    agr)
+	doagr=T
         ;;
     *)
         echo "Unrecognized option:" $1
@@ -108,6 +116,9 @@ if [ $nargs -eq 0 -o $domerge == T ]; then
     echo '##gff-version 3' > ${WORKINGDIR}/MGI.gff3
     cat ${WORKINGDIR}/chr*.gff >> ${WORKINGDIR}/MGI.gff3 2>> ${LOGFILE}
 
+    logit "Running acceptance tests..."
+    ${BIN}/acceptance.sh
+    checkExit
 
     logit "Generating sample file..."
     ${BIN}/sample.sh < ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.sample.gff3
@@ -125,6 +136,24 @@ if [ $nargs -eq 0 -o $doexome == T ]; then
     #logit "creating MGI exome file..."
     logit "exome phase not yet implemented"
     #${PYTHON} ${BIN}/exome.py ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.exome.gff3 2>> ${LOGFILE}
+    #checkExit
+fi
+
+########
+# AGR phase
+if [ $nargs -eq 0 -o $doagr == T ]; then
+    logit "Generating GFF3 file for AGR..."
+    ${PYTHON} ${BIN}/trimForAgr.py < ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.agr.gff3 2>> ${LOGFILE}
+    checkExit
+fi
+
+########
+# DISTRIB phase
+if [ $nargs -eq 0 -o $dodistrib == T ]; then
+    logit "Distrib step disabled."
+    #logit "Copying files to distrib directory..."
+    #${CP} ${WORKINGDIR}/MGI.gff3 ${DISTRIBDIR}
+    #${CP} ${WORKINGDIR}/MGI.agr.gff3 ${DISTRIBDIR}
     #checkExit
 fi
 
