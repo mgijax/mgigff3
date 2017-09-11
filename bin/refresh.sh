@@ -150,11 +150,10 @@ fi
 ########
 # DISTRIB phase
 if [ $nargs -eq 0 -o $dodistrib == T ]; then
-    logit "Distrib step disabled."
-    #logit "Copying files to distrib directory..."
-    #${CP} ${WORKINGDIR}/MGI.gff3 ${DISTRIBDIR}
-    #${CP} ${WORKINGDIR}/MGI.agr.gff3 ${DISTRIBDIR}
-    #checkExit
+    logit "Copying files to distrib directory..."
+    ${CP} ${WORKINGDIR}/MGI.gff3 ${DISTRIBDIR}
+    ${CP} ${WORKINGDIR}/MGI.agr.gff3 ${DISTRIBDIR}
+    checkExit
 fi
 
 ########
