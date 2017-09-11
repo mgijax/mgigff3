@@ -21,7 +21,8 @@ def count(f, path):
     if len(f.children) == 0:
 	leaves[f.type] = leaves.get(f.type,0) + 1
 	pth = '|'.join(path)
-	exemplars.setdefault(pth, f.ID)
+	if "ID" in f.attributes:
+	    exemplars.setdefault(pth, f.ID)
 	paths[pth] = paths.get(pth, 0) + 1
     else:
 	for c in f.children:

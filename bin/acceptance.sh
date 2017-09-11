@@ -13,30 +13,41 @@ function try {
 }
 
 ###
-T="Number of Bmp4 genes = 1"
-v=`grep MGI:88180 ${FILE} | grep '	gene	' | wc -l`
-try "$T" $v -eq 1
-
-###
-T="Number of features in Bmp4 model > 30"
-v=`grep MGI:88180 ${FILE} | wc -l`
-try "$T" $v -gt 30
-
-###
-T="Lines in file >= 3M"
+T="Number of lines in file"
 v=`cat ${FILE} | wc -l`
 try "$T" $v -ge 3000000
 
 ###
-T="Protein coding genes > 20000"
+T="Number of protein coding genes"
 v=`grep protein_coding_gene ${FILE} | wc -l`
-try "$T" $v -ge 20000
+try "$T" $v -gt 20000
+
+###
+T="Number of pseudogenes"
+v=`grep "	pseudogene	" ${FILE} | wc -l`
+try "$T" $v -gt 14000
+
+###
+T="Number of miRNA products"
+v=`grep "	miRNA	" ${FILE} | wc -l`
+try "$T" $v -gt 2500
+
+###
+T="Number of Bmp4 genes"
+v=`grep MGI:88180 ${FILE} | grep '	gene	' | wc -l`
+try "$T" $v -eq 1
+
+###
+T="Number of features in Bmp4 model"
+v=`grep MGI:88180 ${FILE} | wc -l`
+try "$T" $v -gt 30
 
 ###
 #
 if [ $failed -eq 0 ]; then
     logit "PASSED all tests."
+    exit 0
 else
     logit "FAILED" $failed "tests."
+    exit $failed
 fi
-exit $failed

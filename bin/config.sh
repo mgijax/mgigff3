@@ -59,10 +59,10 @@ function die {
 function assert {
     test $2 $3 $4
     if [ $? -ne 0 ]; then
-        logit "FAILED ASSERTION: $1"
+        logit "FAILED ASSERTION: $1: $2 $3 $4"
 	return 1
     else
-	logit "OK:" $1
+	logit "OK: $1: $2 $3 $4"
 	return 0
     fi
 }
