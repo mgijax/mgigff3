@@ -3,52 +3,52 @@
 set -o pipefail
 
 # ---------------------
-PYTHON=python
-PYTHON24="python2.4"
-CURL=curl
-CP=cp
-GUNZIP=gunzip
-GREP=grep
-SORT=sort
-MKDIR=mkdir
-DATE=date
-TOUCH=touch
-CUT=cut
-SED=sed
-GFCLIENT=gfClient
-PSLREPS=pslReps
-GREP=grep
+export PYTHON=python
+export PYTHON24="python2.4"
+export CURL=curl
+export CP=cp
+export GUNZIP=gunzip
+export GREP=grep
+export SORT=sort
+export MKDIR=mkdir
+export DATE=date
+export TOUCH=touch
+export CUT=cut
+export SED=sed
+export GFCLIENT=gfClient
+export PSLREPS=pslReps
+export GREP=grep
 
 # ---------------------
-BLAT_HOST="bhmgiapp01.jax.org"
-BLAT_PORT="9038"
+export BLAT_HOST="bhmgiapp01.jax.org"
+export BLAT_PORT="9038"
 
 # The chromosomes and their order.
-CHRS=( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 X Y MT )
+export CHRS=( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 X Y MT )
 
 # ---------------------
 # https://stackoverflow.com/questions/59895/getting-the-source-directory-of-a-bash-script-from-within
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-BIN=${DIR}
-DATADIR=${DIR}/../data
-#DATADIR=/data/research/mouse_build_38_external/original_annotations
-WORKINGDIR=${DIR}/../work
-DISTRIBDIR=${DIR}/../dist
+export DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+export BIN=${DIR}
+export DATADIR=${DIR}/../data
+#export DATADIR=/data/research/mouse_build_38_external/original_annotations
+export WORKINGDIR=${DIR}/../work
+export DISTRIBDIR=${DIR}/../dist
 
-PYTHONPATH=${DIR}/lib:${PYTHONPATH:-.}
+export PYTHONPATH=${DIR}/lib:${PYTHONPATH:-.}
 
 #
-DATESTAMP=`${DATE} +"%Y-%m-%d"`
+export DATESTAMP=`${DATE} +"%Y-%m-%d"`
 
 # ---------------------
-SORTCMD="sort -k 1,1 -k 4n,4n -k 5nr,5nr"
-SPLITCMD="${PYTHON} ${BIN}/splitGff.py -d ${WORKINGDIR}"
+export SORTCMD="sort -k 1,1 -k 4n,4n -k 5nr,5nr"
+export SPLITCMD="${PYTHON} ${BIN}/splitGff.py -d ${WORKINGDIR}"
 
 # ---------------------
 ${MKDIR} -p ${WORKINGDIR}
 
 # ---------------------
-LOGFILE=${WORKINGDIR}/LOG.${DATESTAMP}
+export LOGFILE=${WORKINGDIR}/LOG.${DATESTAMP}
 ${TOUCH} ${LOGFILE}
 
 # ---------------------
@@ -97,9 +97,4 @@ function checkExit {
     fi
     return 0
 }
-
-# ---------------------
-export DIR BIN PYTHONPATH WORKINGDIR DATADIR LOGFILE SORT GREP SORTCMD SPLITCMD
-export DISTRIBDIR
-export CP TOUCH CUT SED GFCLIENT PSLREPS GREP BLAT_HOST  BLAT_HOST
 

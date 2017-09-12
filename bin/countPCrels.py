@@ -23,7 +23,7 @@ def count(f, path):
 	leaves[f.type] = leaves.get(f.type,0) + 1
 	pth = '|'.join(path)
 	paths[pth] = paths.get(pth, 0) + 1
-	if not pth in exemplars: exemplars[pth] = "\n\t" + str(f)
+	if not pth in exemplars: exemplars[pth] = "\t" + str(f)[:-1]
     else:
 	for c in f.children:
 	    count(c, path+[c.type])
