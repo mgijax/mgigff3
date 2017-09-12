@@ -112,6 +112,7 @@ if [ $nargs -eq 0 -o $domerge == T ]; then
 	${PYTHON} ${BIN}/merge.py ${WORKINGDIR}/*.chr${i}.gff > ${WORKINGDIR}/chr${i}.gff 2>> ${LOGFILE}
 	checkExit
     done
+
     logit "catting files..."
     echo '##gff-version 3' > ${WORKINGDIR}/MGI.gff3
     cat ${WORKINGDIR}/chr*.gff >> ${WORKINGDIR}/MGI.gff3 2>> ${LOGFILE}
@@ -133,10 +134,9 @@ fi
 ########
 # EXOME phase
 if [ $nargs -eq 0 -o $doexome == T ]; then
-    #logit "creating MGI exome file..."
-    logit "exome phase not yet implemented"
-    #${PYTHON} ${BIN}/exome.py ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.exome.gff3 2>> ${LOGFILE}
-    #checkExit
+    logit "creating MGI exome file..."
+    ${PYTHON} ${BIN}/exome.py < ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.exome.gff3 2>> ${LOGFILE}
+    checkExit
 fi
 
 ########
@@ -153,6 +153,7 @@ if [ $nargs -eq 0 -o $dodistrib == T ]; then
     logit "Copying files to distrib directory..."
     ${CP} ${WORKINGDIR}/MGI.gff3 ${DISTRIBDIR}
     ${CP} ${WORKINGDIR}/MGI.agr.gff3 ${DISTRIBDIR}
+    ${CP} ${WORKINGDIR}/MGI.exome.gff3 ${DISTRIBDIR}
     checkExit
 fi
 
