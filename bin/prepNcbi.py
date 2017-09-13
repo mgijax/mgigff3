@@ -167,12 +167,10 @@ class ConvertNCBI:
 
     def main(self):
 	for m in gff3.models(self.pre(sys.stdin)):
-	   # filter out miRNAs. We'll get them only from mirbase for now.
-	   if m.attributes.get("so_term_name",None) == "miRNA":
-	       continue
 	   self.checkPseudogene(m)
-	   if not self.filter3(m):
-	       continue
+	   # 
+	   # if not self.filter3(m):
+	   #    continue
 	   for f in gff3.flattenModel(m):
 	       print str(f),
 

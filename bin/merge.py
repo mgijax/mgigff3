@@ -164,8 +164,7 @@ class ModelMerger:
     #
     def validate(self, m):
 	if len(m.children) == 0:
-	    self.log("Gene has no subfeatures. Culling: " + str(m))
-	    return None
+	    self.log("Warning: Gene has no subfeatures: " + str(m))
         return m
 
     # Merges the sorted gff files listed on the command line into a single stream,

@@ -1,3 +1,20 @@
+#
+# prepMgi.py
+#
+# Generates a GFF3 file of genes and pseudogenes in MGI.
+# Only gene/pseudogene features; no subfeatures (obviously).
+# These genes/pseudogenes will for the roots of model hierarchies in the 
+# output. 
+# Each feature includes the MGI id, symbol, name, actual SO type (e.g., tRNA_gene) 
+# and genomic coordinates.
+# Each feature also includes Dbxrefs to their various gene models.
+# These Dbxrefs will direct the merging of models downstream.
+#
+# IMPLEMENTATION: Uses MouseMine web services. Retrieves all SequenceFeatures 
+# in the Mouse Genome Catalog (along with any model IDs)
+# Filters for genes and pseudogenes.
+# Writes GFF3 file.
+#
 
 from intermine.webservice import Service
 import gff3
