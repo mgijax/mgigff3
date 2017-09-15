@@ -1,7 +1,12 @@
 #
 # convertNCBI.py
 #
-# Filters NCBI file for features on one of the chromosomes in the chromosome file.
+# Filters/tweaks the NCBI file.
+# * converts column 1 values from sequence ids to chromosome (or contig) ids.
+# * filters out unwanted feature types
+# * converts features of type gene where pseudo=true, into features of type pseudogene
+# * removes "unwanted" attributes
+#
 # Usage:
 #  python convertNCBI.py < /path/to/ncbidatafile.gff3 > output.gff3
 # 
@@ -44,6 +49,16 @@ class ConvertNCBI:
 	return None
 
 
+    # Processes the next feature from the NCBI gff3 file.
+    # Returns the feature, or None if the feature should be skipped.
+    # (One of the main things this code does is decided which features 
+    # we're interested in.)
+    #
+    # The NCBI file uses sequence ids in col 1 to refer to chromosomes (and contigs).
+    # (E.g. "NC_000067.6").
+    # In addition, the features on a given chromosome are preceded in the file by a feature 
+    # of type chromosome which contains the chromosome name (e.g. "1")
+    #
     def process(self, f):
 	# NCBI file has multi-level sort, with first level being by region 
 	# (e.g. a chromosome or a contig)
@@ -106,6 +121,7 @@ class ConvertNCBI:
 		elif biotype == "pseudogene":
 		    f[2] = "pseudogene"
 		f.attributes["so_term_name"] = biotype
+	#
 	f.attributes.pop('gene_biotype',None)
 	f.attributes.pop('Dbxref',None)
 	f.attributes.pop('gene_synonym',None)
@@ -128,14 +144,22 @@ class ConvertNCBI:
     def log(self, s):
         sys.stderr.write(s)
 
+    # NCBI provides 2-level pseudogenes. We need 3-levels. 
+    # Checks the provided model to see if it's a pseudogene with
+    # only exon children. If so, it inserts a pseudogenic_transcript
+    # in between.
+    #
     def checkPseudogene(self, m):
         if not m.type == "pseudogene" or len(m.children) == 0:
 	    return
 	for c in m.children:
 	    if c.type != "exon":
 	        return
+	# If here, its a pseudogene with only exons for children.
+	# Insert the transcript
 	self.transcriptCount += 1
         t = gff3.Feature(m)
+	t.attributes = {}
 	t.ID = "inserted_transcript_%d" % self.transcriptCount
 	t.type = "pseudogenic_transcript"
 	t.Parent = [ m.ID ]
