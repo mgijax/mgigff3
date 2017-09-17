@@ -4,7 +4,8 @@
 # Filters/tweaks the NCBI file.
 # * converts column 1 values from sequence ids to chromosome (or contig) ids.
 # * filters out unwanted feature types
-# * converts features of type gene where pseudo=true, into features of type pseudogene
+# * converts features of type gene where pseudo=true, into features of type pseudogene.
+#   Also converts their transcripts and exon to their pseudogenic cousins.
 # * removes "unwanted" attributes
 #
 # Usage:
@@ -137,9 +138,19 @@ class ConvertNCBI:
 	return f
 
     def pre(self, inp):
+	skipped = {}
         for f in gff3.iterate(inp):
 	    if self.process(f):
 	       yield f
+	    else:
+	       n = skipped.get(f.type, 0)
+	       skipped[f.type] = n + 1
+	if len(skipped):
+	    self.log("Counts of skipped features, by type:\n")
+	    tps = skipped.keys()
+	    tps.sort()
+	    for t in tps:
+		self.log("%s\t%d\n"%(t, skipped[t]))
 
     def log(self, s):
         sys.stderr.write(s)
@@ -168,33 +179,9 @@ class ConvertNCBI:
 	    c.type = "pseudogenic_exon"
 	gff3.crossReference([m, t] + list(m.children))
         
-    # Filters out non-3-level gene models (per AGR).
-    # 
-    def filter3(self, m):
-	if m.type != "gene":
-	    return m
-	if len(m.children) == 0:
-	    self.log("Gene model is 1 level. Culling: ")
-	    self.log(str(m))
-	    return None
-	kids = list(m.children)
-	for c in kids:
-	    if len(c.children) == 0:
-		self.log("Leaf detected at level 2. Culling: ")
-		self.log(str(c))
-		m.children.remove(c)
-	if len(m.children) == 0:
-	    self.log("No children remain. Culling: ")
-	    self.log(str(m))
-	    return None
-        return m
-
     def main(self):
 	for m in gff3.models(self.pre(sys.stdin)):
 	   self.checkPseudogene(m)
-	   # 
-	   # if not self.filter3(m):
-	   #    continue
 	   for f in gff3.flattenModel(m):
 	       print str(f),
 
