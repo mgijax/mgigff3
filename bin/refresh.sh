@@ -20,7 +20,7 @@ do
     mgi)
 	domgi=T
         ;;
-    mgic*)
+    mgicom*)
 	domgicomputed=T
         ;;
     ncbi)
@@ -60,6 +60,8 @@ logit "Starting refresh..."
 ########
 # MGI
 if [ $nargs -eq 0 -o $domgi == T ]; then
+    # Queries MGI data. Writes genes and pseudogenes into gff3 file. Each has Dbxrefs containing
+    # any provider model ids. Downstream merging will be directed by this data.
     logit 'prepMgi...'
     ${PYTHON} ${BIN}/prepMgi.py 2>> ${LOGFILE} | ${SORTCMD} | ${SPLITCMD} -t "mgi.chr%s.gff" 
     checkExit
@@ -68,8 +70,11 @@ fi
 ########
 # MGI computed
 if [ $nargs -eq 0 -o $domgicomputed == T ]; then
+    # Computes Blat'ed models for MGI genes that don't have models but do have good enough
+    # sequences. The sequences are blatted against the mouse genome, and the best scoring
+    # hits are made into models. 
     logit "prepMgiComputed..."
-    ${BIN}/refreshMgiComputed.sh 2>> ${LOGFILE}
+    ${BIN}/refreshMgiComputed.sh 2>> ${LOGFILE}  | ${SPLITCMD} -t "mgicomputed.chr%s.gff"
     checkExit
 fi
 

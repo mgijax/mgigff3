@@ -1,14 +1,27 @@
 #!/usr/bin/bash
+#
+# refreshMgiComputed.sh
+#
+# For the MGI genes that don't have a gene model from a provider, generates ersatz models.
+# Writes to models to stdout.
+# 
+#
+# 1. Finding "good enough" sequences for each gene
+#	1a. Query MGI for the genes wihtout models and their qualifying seuqnece IDs
+#	1b. Download the sequences from NCBI into a fasta file.
+# 2. Blatting those sequences against the mouse genome
+# 3. Filtering the blat results. 
+#	3a. Only sequences with a single match across the genome 
+#	3b. Only matches meeting %length and %identity thresholds
+# 4. Turning the blat match results into little models
+#	4a. Merges the MGI data from 1a with the filtered blat results from 3b
+#	4b. Creates models with the structure: gene -> match -> match_part
+# 5. Writing the results to GFF3 file
+#
+#
 
 source config.sh
 
-# For the MGI genes that don't have a gene model from a provider, we generate ersatz models by:
-# 1. Finding "good" sequences
-# 2. Blatting those sequences against the mouse genome
-# 3. Filtering the blat results and turning them into little models.
-#
-
-#
 # 1. generate a file of mgi_id/seq_id pairs.
 logit "Phase 2: getting MGI data..."
 ${PYTHON24} ${BIN}/prepMgiComputed.py | ${SORT} > ${WORKINGDIR}/mgiComputed.seqids.txt
@@ -32,7 +45,7 @@ checkExit
 
 # 3b. Convert the alignments to GFF3 hierarchies and attach the corresponding MGI id
 logit "Phase 2: Generating models..."
-${PYTHON} mgiComputedMerge.py ${WORKINGDIR}/mgiComputed.pslreps.psl ${WORKINGDIR}/mgiComputed.seqids.txt | ${SPLITCMD} -t "mgicomputed.chr%s.gff"
+${PYTHON} mgiComputedMerge.py ${WORKINGDIR}/mgiComputed.pslreps.psl ${WORKINGDIR}/mgiComputed.seqids.txt 
 checkExit
 
 logit "Phase 2: finished."
