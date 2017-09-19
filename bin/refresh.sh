@@ -81,6 +81,9 @@ fi
 ########
 # NCBI
 if [ $nargs -eq 0 -o $doncbi == T ]; then
+    #
+    # ftp://ftp.ncbi.nlm.nih.gov/genomes/Mus_musculus/GFF/ref_GRCm38.p4_top_level.gff3.gz
+    #
     logit 'prepNcbi...'
     ${PYTHON} ${BIN}/prepNcbi.py 2>> ${LOGFILE} < ${DATADIR}/ref_GRCm38.p4_top_level.gff3 | ${SPLITCMD} -t "ncbi.chr%s.gff"
     checkExit
@@ -89,6 +92,9 @@ fi
 ########
 # miRBase
 if [ $nargs -eq 0 -o $domirbase == T ]; then
+    #
+    # ftp://mirbase.org/pub/mirbase/CURRENT/genomes/mmu.gff3
+    #
     logit 'prepMirbase...'
     ${PYTHON} ${BIN}/prepMirbase.py 2>> ${LOGFILE} < ${DATADIR}/miRBase21_mmu.gff3 | ${SPLITCMD} -t "mirbase.chr%s.gff"
     checkExit
@@ -97,6 +103,10 @@ fi
 ########
 # ENSEMBL
 if [ $nargs -eq 0 -o $doensembl == T ]; then
+    #
+    # ftp://ftp.ensembl.org/pub/release-90/gff3/mus_musculus/Mus_musculus.GRCm38.90.gff3.gz
+    # Note that the ensembl version number increases each release.
+    #
     ENSEMBLver=89
     ENSEMBLfile=Mus_musculus.GRCm38.${ENSEMBLver}.gff3
     ENSEMBLurl=ftp://ftp.ensembl.org/pub/release-${ENSEMBLver}/gff3/mus_musculus/${ENSEMBLfile}.gz
