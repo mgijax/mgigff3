@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/bash -v
 
 source config.sh
 
@@ -65,6 +65,11 @@ if [ $nargs -eq 0 -o $domgi == T ]; then
     logit 'prepMgi...'
     ${PYTHON} ${BIN}/prepMgi.py 2>> ${LOGFILE} | ${SORTCMD} | ${SPLITCMD} -t "mgi.chr%s.gff" 
     checkExit
+
+    logit 'Counting mgi after prep...'
+    ${PYTHON} ${BIN}/countPCrels.py ${WORKINGDIR}/mgi.chr*.gff > ${WORKINGDIR}/mgi.counts.txt
+    checkExit
+
 fi
 
 ########
@@ -76,27 +81,59 @@ if [ $nargs -eq 0 -o $domgicomputed == T ]; then
     logit "prepMgiComputed..."
     ${BIN}/refreshMgiComputed.sh 2>> ${LOGFILE}  | ${SPLITCMD} -t "mgicomputed.chr%s.gff"
     checkExit
+
+    logit 'Counting mgicomputed after prep...'
+    ${PYTHON} ${BIN}/countPCrels.py ${WORKINGDIR}/mgicomputed.chr*.gff > ${WORKINGDIR}/mgicomputed.counts.txt
+    checkExit
+
 fi
 
 ########
 # NCBI
 if [ $nargs -eq 0 -o $doncbi == T ]; then
     #
-    # ftp://ftp.ncbi.nlm.nih.gov/genomes/Mus_musculus/GFF/ref_GRCm38.p4_top_level.gff3.gz
+    NCBIfile=ref_GRCm38.p4_top_level.gff3
+    NCBIurl=ftp://ftp.ncbi.nlm.nih.gov/genomes/Mus_musculus/GFF/${NCBIfile}.gz
     #
-    logit 'prepNcbi...'
-    ${PYTHON} ${BIN}/prepNcbi.py 2>> ${LOGFILE} < ${DATADIR}/ref_GRCm38.p4_top_level.gff3 | ${SPLITCMD} -t "ncbi.chr%s.gff"
+    logit 'Downloading ncbi'
+    ${CURL} ${NCBIurl} | ${GUNZIP} > ${DATADIR}/${NCBIfile}
     checkExit
+
+    logit 'Counting ncbi before prep...'
+    ${PYTHON} ${BIN}/countPCrels.py ${DATADIR}/${NCBIfile} > ${DATADIR}/ncbi.counts.txt
+    checkExit
+
+    logit 'Prep ncbi...'
+    ${PYTHON} ${BIN}/prepNcbi.py 2>> ${LOGFILE} < ${DATADIR}/${NCBIfile} | ${SPLITCMD} -t "ncbi.chr%s.gff"
+    checkExit
+
+    logit 'Counting ncbi after prep...'
+    ${PYTHON} ${BIN}/countPCrels.py ${WORKINGDIR}/ncbi.chr*.gff > ${WORKINGDIR}/ncbi.counts.txt
+    checkExit
+
 fi
 
 ########
 # miRBase
 if [ $nargs -eq 0 -o $domirbase == T ]; then
     #
-    # ftp://mirbase.org/pub/mirbase/CURRENT/genomes/mmu.gff3
+    MIRfile=mmu.gff3
+    MIRurl=ftp://mirbase.org/pub/mirbase/CURRENT/genomes/${MIRfile}
     #
+    logit 'Downloading mirbase'
+    ${CURL} ${MIRurl} > ${DATADIR}/${MIRfile}
+    checkExit
+
+    logit 'Counting mirbase before prep...'
+    ${PYTHON} ${BIN}/countPCrels.py ${DATADIR}/${MIRfile} > ${DATADIR}/mirbase.counts.txt
+    checkExit
+
     logit 'prepMirbase...'
-    ${PYTHON} ${BIN}/prepMirbase.py 2>> ${LOGFILE} < ${DATADIR}/miRBase21_mmu.gff3 | ${SPLITCMD} -t "mirbase.chr%s.gff"
+    ${PYTHON} ${BIN}/prepMirbase.py 2>> ${LOGFILE} < ${DATADIR}/${MIRfile} | ${SPLITCMD} -t "mirbase.chr%s.gff"
+    checkExit
+
+    logit 'Counting mirbase after prep...'
+    ${PYTHON} ${BIN}/countPCrels.py ${WORKINGDIR}/mirbase.chr*.gff > ${WORKINGDIR}/mirbase.counts.txt
     checkExit
 fi
 
@@ -107,14 +144,26 @@ if [ $nargs -eq 0 -o $doensembl == T ]; then
     # ftp://ftp.ensembl.org/pub/release-90/gff3/mus_musculus/Mus_musculus.GRCm38.90.gff3.gz
     # Note that the ensembl version number increases each release.
     #
-    ENSEMBLver=89
+    ENSEMBLver=90
     ENSEMBLfile=Mus_musculus.GRCm38.${ENSEMBLver}.gff3
     ENSEMBLurl=ftp://ftp.ensembl.org/pub/release-${ENSEMBLver}/gff3/mus_musculus/${ENSEMBLfile}.gz
     #
-    #${CURL} ${ENSEMBLurl} | ${GUNZIP} > ${DATADIR}/${ENSEMBLfile}
-    logit 'prepEnsembl...'
+    logit 'Downloading ensembl...'
+    ${CURL} ${ENSEMBLurl} | ${GUNZIP} > ${DATADIR}/${ENSEMBLfile}
+    checkExit
+
+    logit 'Counting ensembl before prep...'
+    ${PYTHON} ${BIN}/countPCrels.py ${DATADIR}/${ENSEMBLfile} > ${DATADIR}/ensembl.counts.txt
+    checkExit
+
+    logit 'Prep ensembl...'
     ${PYTHON} ${BIN}/prepEnsembl.py 2>> ${LOGFILE} < ${DATADIR}/${ENSEMBLfile} | ${SPLITCMD} -t "ensembl.chr%s.gff"
     checkExit
+
+    logit 'Counting ensembl after prep...'
+    ${PYTHON} ${BIN}/countPCrels.py ${WORKINGDIR}/ensembl.chr*.gff > ${WORKINGDIR}/ensembl.counts.txt
+    checkExit
+
 fi
 
 ########

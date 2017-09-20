@@ -13,7 +13,7 @@ sys.stdout.write(gff3.HEADER)
 for feats in gff3.models(sys.stdin, flatten=True):
     #
     m = feats[0]
-    exons = filter(lambda f: "exon" in f.type, feats)
+    exons = filter(lambda f: "exon" in f.type, feats) # includes pseudogenic exons
     #
     unique = {}
     for e in exons:
