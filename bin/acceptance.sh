@@ -34,7 +34,7 @@ try \
   "Number of pseudogenes" \
   `grep "	pseudogene	" ${FILE} | wc -l` \
   -gt \
-  14000
+  13000
 
 ###
 try \
