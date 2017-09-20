@@ -74,20 +74,7 @@ class ModelMerger:
 	    c.parents.clear()
 	    c.parents.add(m)
 	    m.children.add(c)
-	# merge f's attributes into m:
-	for (fan,fav) in f.attributes.items():
-	    if fan == "ID": continue
-	    if fav is None or fav == "" or fav == []: continue
-	    mav = m.attributes.get(fan,None) 
-	    if mav is None:
-	        m.attributes[fan] = []
-	    elif type(mav) is types.StringType:
-	        m.attributes[fan] = [mav]
-	    if type(fav) is types.StringType:
-		m.attributes[fan].append(fav)
-	    else:
-		m.attributes[fan].extend(fav)
-
+	return
     #
     def reassignIDs(self, m):
 	idMap = {}
