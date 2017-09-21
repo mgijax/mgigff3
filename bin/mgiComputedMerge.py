@@ -1,9 +1,12 @@
 #
 # mgiComputedMerge.py
+#
 # Merges the filtered blat results (PSLFILE) with the gene data from MGI (MGISEQIDFILE)
 # and generates the MGI blatted model file.
 #
 # % python mgiComputedMerge.py PSLFILE MGISEQIDFILE > OUTFILE
+#
+# The file is sorted in the standard way.
 #
 
 import sys

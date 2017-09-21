@@ -24,7 +24,7 @@ source config.sh
 
 # 1. generate a file of mgi_id/seq_id pairs.
 logit "Phase 2: getting MGI data..."
-${PYTHON24} ${BIN}/prepMgiComputed.py | ${SORT} > ${WORKINGDIR}/mgiComputed.seqids.txt
+${PYTHON24} ${BIN}/prepMgiComputed.py > ${WORKINGDIR}/mgiComputed.seqids.txt
 checkExit
 
 # 2a. feed the sequence ids (2nd column) to the fetch script
@@ -35,12 +35,12 @@ checkExit
 
 # 2b. Blat the sequences against the mouse genome assembly
 logit "Phase 2: Blat'ing the sequences..."
-${GFCLIENT} -nohead -minIdentity=95 ${BLAT_HOST} ${BLAT_PORT} / ${WORKINGDIR}/mgiComputed.seqs.fa ${WORKINGDIR}/mgiComputed.blat.psl
+${GFCLIENT} -nohead -minIdentity=95 ${BLAT_HOST} ${BLAT_PORT} / ${WORKINGDIR}/mgiComputed.seqs.fa ${WORKINGDIR}/mgiComputed.blat.psl >> ${LOGFILE} 2>&1
 checkExit
 
 # 3a. Use pslreps to filter the results to single best hits
 logit "Phase 2: Filtering blat hits with pslreps..."
-${PSLREPS} -singleHit -nohead ${WORKINGDIR}/mgiComputed.blat.psl ${WORKINGDIR}/mgiComputed.pslreps.psl ${WORKINGDIR}/mgiComputed.pslreps.psr
+${PSLREPS} -singleHit -nohead ${WORKINGDIR}/mgiComputed.blat.psl ${WORKINGDIR}/mgiComputed.pslreps.psl ${WORKINGDIR}/mgiComputed.pslreps.psr >> ${LOGFILE} 2>&1
 checkExit
 
 # 3b. Convert the alignments to GFF3 hierarchies and attach the corresponding MGI id
