@@ -1,4 +1,4 @@
-#!/usr/bin/bash -v
+#!/usr/bin/bash
 
 source config.sh
 
@@ -67,7 +67,7 @@ if [ $nargs -eq 0 -o $domgi == T ]; then
     checkExit
 
     logit 'Counting mgi after prep...'
-    ${PYTHON} ${BIN}/countPCrels.py ${WORKINGDIR}/mgi.chr*.gff > ${WORKINGDIR}/mgi.counts.txt
+    ${COUNTCMD} ${WORKINGDIR}/mgi.chr*.gff > ${WORKINGDIR}/mgi.counts.txt
     checkExit
 
 fi
@@ -83,7 +83,7 @@ if [ $nargs -eq 0 -o $domgicomputed == T ]; then
     checkExit
 
     logit 'Counting mgicomputed after prep...'
-    ${PYTHON} ${BIN}/countPCrels.py ${WORKINGDIR}/mgicomputed.chr*.gff > ${WORKINGDIR}/mgicomputed.counts.txt
+    ${COUNTCMD} ${WORKINGDIR}/mgicomputed.chr*.gff > ${WORKINGDIR}/mgicomputed.counts.txt
     checkExit
 
 fi
@@ -99,8 +99,8 @@ if [ $nargs -eq 0 -o $doncbi == T ]; then
     ${CURL} ${NCBIurl} | ${GUNZIP} > ${DATADIR}/${NCBIfile}
     checkExit
 
-    logit 'Counting ncbi before prep...'
-    ${PYTHON} ${BIN}/countPCrels.py ${DATADIR}/${NCBIfile} > ${DATADIR}/ncbi.counts.txt
+    logit 'Counting ncbi downloaded...'
+    ${COUNTCMD} ${DATADIR}/${NCBIfile} > ${DATADIR}/ncbi.counts.txt
     checkExit
 
     logit 'Prep ncbi...'
@@ -108,7 +108,7 @@ if [ $nargs -eq 0 -o $doncbi == T ]; then
     checkExit
 
     logit 'Counting ncbi after prep...'
-    ${PYTHON} ${BIN}/countPCrels.py ${WORKINGDIR}/ncbi.chr*.gff > ${WORKINGDIR}/ncbi.counts.txt
+    ${COUNTCMD} ${WORKINGDIR}/ncbi.chr*.gff > ${WORKINGDIR}/ncbi.counts.txt
     checkExit
 
 fi
@@ -124,8 +124,8 @@ if [ $nargs -eq 0 -o $domirbase == T ]; then
     ${CURL} ${MIRurl} > ${DATADIR}/${MIRfile}
     checkExit
 
-    logit 'Counting mirbase before prep...'
-    ${PYTHON} ${BIN}/countPCrels.py ${DATADIR}/${MIRfile} > ${DATADIR}/mirbase.counts.txt
+    logit 'Counting mirbase downloaded...'
+    ${COUNTCMD} ${DATADIR}/${MIRfile} > ${DATADIR}/mirbase.counts.txt
     checkExit
 
     logit 'prepMirbase...'
@@ -133,7 +133,7 @@ if [ $nargs -eq 0 -o $domirbase == T ]; then
     checkExit
 
     logit 'Counting mirbase after prep...'
-    ${PYTHON} ${BIN}/countPCrels.py ${WORKINGDIR}/mirbase.chr*.gff > ${WORKINGDIR}/mirbase.counts.txt
+    ${COUNTCMD} ${WORKINGDIR}/mirbase.chr*.gff > ${WORKINGDIR}/mirbase.counts.txt
     checkExit
 fi
 
@@ -152,8 +152,8 @@ if [ $nargs -eq 0 -o $doensembl == T ]; then
     ${CURL} ${ENSEMBLurl} | ${GUNZIP} > ${DATADIR}/${ENSEMBLfile}
     checkExit
 
-    logit 'Counting ensembl before prep...'
-    ${PYTHON} ${BIN}/countPCrels.py ${DATADIR}/${ENSEMBLfile} > ${DATADIR}/ensembl.counts.txt
+    logit 'Counting ensembl downloaded...'
+    ${COUNTCMD} ${DATADIR}/${ENSEMBLfile} > ${DATADIR}/ensembl.counts.txt
     checkExit
 
     logit 'Prep ensembl...'
@@ -161,7 +161,7 @@ if [ $nargs -eq 0 -o $doensembl == T ]; then
     checkExit
 
     logit 'Counting ensembl after prep...'
-    ${PYTHON} ${BIN}/countPCrels.py ${WORKINGDIR}/ensembl.chr*.gff > ${WORKINGDIR}/ensembl.counts.txt
+    ${COUNTCMD} ${WORKINGDIR}/ensembl.chr*.gff > ${WORKINGDIR}/ensembl.counts.txt
     checkExit
 
 fi
@@ -191,7 +191,7 @@ if [ $nargs -eq 0 -o $domerge == T ]; then
 
     # Generate feature type profile
     logit "Generating feature type profile..."
-    ${PYTHON} ${BIN}/countPCrels.py < ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.counts.txt
+    ${COUNTCMD} < ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.counts.txt
     checkExit
 fi
 
@@ -222,4 +222,4 @@ if [ $nargs -eq 0 -o $dodistrib == T ]; then
 fi
 
 ########
-logit 'Refresh finished.'
+logit 'Refresh finished. No errors detected.'

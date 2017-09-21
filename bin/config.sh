@@ -20,9 +20,13 @@ export PSLREPS=pslReps
 export GREP=grep
 
 # ---------------------
+#
+export DATESTAMP=`${DATE} +"%Y-%m-%d"`
+
+# ---------------------
 export BLAT_HOST="bhmgiapp01.jax.org"
 export BLAT_PORT="9038"
-
+#
 # The chromosomes and their order.
 export CHRS=( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 X Y MT )
 
@@ -31,20 +35,18 @@ export CHRS=( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 X Y MT )
 export DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export BIN=${DIR}
 export DATADIR=${DIR}/../data
-#export DATADIR=/data/research/mouse_build_38_external/original_annotations
 export WORKINGDIR=${DIR}/../work
 export DISTRIBDIR=${DIR}/../dist
 
 export PYTHONPATH=${DIR}/lib:${PYTHONPATH:-.}
 
-#
-export DATESTAMP=`${DATE} +"%Y-%m-%d"`
-
 # ---------------------
 export SORTCMD="sort -k 1,1 -k 4n,4n -k 5nr,5nr"
 export SPLITCMD="${PYTHON} ${BIN}/splitGff.py -d ${WORKINGDIR}"
+export COUNTCMD="${PYTHON} ${BIN}/countPCrels.py"
 
 # ---------------------
+${MKDIR} -p ${DATADIR}
 ${MKDIR} -p ${WORKINGDIR}
 
 # ---------------------

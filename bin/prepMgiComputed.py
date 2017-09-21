@@ -1,9 +1,9 @@
 #
 # prepMgiComputed.py
 #
-# Outputs a 2-column file of
-#	mgiid	seqid
-# pairs, for genes that do not have associated gene models
+# Outputs a 6-column file:
+#	seqid  mgiid  symbol  name  mcvtype  sotype
+# for genes that do not have associated gene models
 # For each such gene, outputs one row for each sequence associated
 # with the gene that also satisfies:
 # - from Genbank/EMBL/DDBJ or RefSeq only
