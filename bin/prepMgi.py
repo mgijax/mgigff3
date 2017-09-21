@@ -61,26 +61,28 @@ def main():
 	    s = f.chromosomeLocation.strand
 	    strand = "+" if s == "+1" else "-" if s == "-1" else "."
 	    dbxrefs = [ pnameMap[xr.source.name] + ":" + xr.identifier for xr in f.crossReferences ]
-	    g = gff3.Feature([
-		f.chromosomeLocation.locatedOn.primaryIdentifier,
-		"MGI",
-		col3,
-		str(f.chromosomeLocation.start),
-		str(f.chromosomeLocation.end),
-		".",
-		strand,
-		".",
-		{
-		    "ID": f.primaryIdentifier,
-		    "curie":  f.primaryIdentifier,
-		    "gene_id": f.primaryIdentifier,
-		    "so_term_name" : f.sequenceOntologyTerm.name,
-		    "Name": f.symbol,
-		    "description": f.name,
-		    "Dbxref" : dbxrefs
+	    # filter out genes with no model IDs
+	    if len(dbxrefs) > 0:
+		g = gff3.Feature([
+		    f.chromosomeLocation.locatedOn.primaryIdentifier,
+		    "MGI",
+		    col3,
+		    str(f.chromosomeLocation.start),
+		    str(f.chromosomeLocation.end),
+		    ".",
+		    strand,
+		    ".",
+		    {
+			"ID": f.primaryIdentifier,
+			"curie":  f.primaryIdentifier,
+			"gene_id": f.primaryIdentifier,
+			"so_term_name" : f.sequenceOntologyTerm.name,
+			"Name": f.symbol,
+			"description": f.name,
+			"Dbxref" : dbxrefs
 
-		}
-	    ])
-	    print str(g),
+		    }
+		])
+		print str(g),
 #
 main()
