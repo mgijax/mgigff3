@@ -52,6 +52,13 @@ try \
 
 ###
 try \
+    "Make sure B230334L07Rik only occurs once" \
+    `grep MGI:2443922 ${FILE} | grep "	gene	" | wc -l` \
+    -eq \
+    1
+
+###
+try \
     "Number of features in Bmp4 model" \
     `grep MGI:88180 ${FILE} | wc -l` \
     -gt \
