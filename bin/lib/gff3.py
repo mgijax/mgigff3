@@ -400,6 +400,15 @@ def walkModel(m):
 def flattenModel(m):
   return list(walkModel(m))
 
+def flattenModel2(m):
+  feats = []
+  def _(f):
+      feats.append(f)
+      for c in f.children:
+          _(c)
+  _(m)
+  return  feats
+
 #----------------------------------------------------
 # Reassigns the ID (and referring Parent attributes) for all the features in a model.
 # Generates IDs like gene1, gene2, exon1, ... (feature's type + counter.)

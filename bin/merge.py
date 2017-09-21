@@ -56,16 +56,25 @@ class ModelMerger:
 
     # Merges model f into m. f is the root of a gene model from some provider. 
     # m is the MGI feature and is the root of a merged model hierarchy that
-    # grows as models from multiple providers are merged.
+    # grows as models from multiple providers are merged. At this point, merging
+    # is pretty tame - the root features of the providers' models are merged into the
+    # mgi root feature, and the descendant trees from the provider model are grafted onto
+    # the growing mgi tree.
     #
     # The model hierarchy under f is copied into m, rather than moved, because
     # of complex (non 1-1) associations among models. (I.e., f may be merged
     # into more than one m).
     #
+    # Merging a gene with a pseudogene causes the addition of a biotypeConflict attribute.
+    #
     def mergeModels(self, m, f):
 	m.start = min(m.start, f.start)
 	m.end   = max(m.end,   f.end)
 	feats = gff3.copyModel(gff3.flattenModel(f))
+	#
+	if ("pseudo" in m.type and "pseudo" not in f.type) \
+	or ("pseudo" not in m.type and "pseudo" in f.type): 
+	    m.biotypeConflict = "true"
 	#
 	f._merged.append(m.curie)
 	m._merged.append(f.curie)
@@ -196,6 +205,6 @@ class ModelMerger:
 
 if __name__ == "__main__":
     for m in ModelMerger().merge(sys.argv[1:]):
-        for f in gff3.flattenModel(m):
+        for f in gff3.flattenModel2(m):
 	    sys.stdout.write(str(f))
 	sys.stdout.write("###\n")
