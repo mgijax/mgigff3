@@ -38,7 +38,7 @@ do
     exome)
 	doexome=T
         ;;
-    distrib)
+    dist*)
 	dodistrib=T
         ;;
     agr)
@@ -214,10 +214,22 @@ fi
 ########
 # DISTRIB phase
 if [ $nargs -eq 0 -o $dodistrib == T ]; then
-    logit "Copying files to distrib directory..."
-    ${CP} ${WORKINGDIR}/MGI.gff3 ${DISTRIBDIR}
-    ${CP} ${WORKINGDIR}/MGI.agr.gff3 ${DISTRIBDIR}
-    ${CP} ${WORKINGDIR}/MGI.exome.gff3 ${DISTRIBDIR}
+    function distrib {
+	filename=$(basename "$1")
+	extension="${filename##*.}"
+	filenameNoExt="${filename%.*}"
+	nfn=${DISTRIBDIR}/archive/${filenameNoExt}.${DATESTAMP2}.${extension}
+	logit "Copying $1 to ${nfn} ..."
+	${CP} $1 ${nfn}
+	checkExit
+
+	symLinkName=${DISTRIBDIR}/${filename}
+	${RM} -f ${symLinkName}
+	${LN} -s ${nfn} ${symLinkName}
+    }
+    distrib ${WORKINGDIR}/MGI.gff3
+    distrib ${WORKINGDIR}/MGI.agr.gff3 
+    distrib ${WORKINGDIR}/MGI.exome.gff3
     checkExit
 fi
 

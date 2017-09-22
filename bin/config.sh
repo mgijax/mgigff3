@@ -18,10 +18,13 @@ export SED=sed
 export GFCLIENT=gfClient
 export PSLREPS=pslReps
 export GREP=grep
+export RM=rm
+export LN=ln
 
 # ---------------------
 #
 export DATESTAMP=`${DATE} +"%Y-%m-%d"`
+export DATESTAMP2=`${DATE} +"%Y%m"`
 
 # ---------------------
 export BLAT_HOST="bhmgiapp01.jax.org"
@@ -32,11 +35,11 @@ export CHRS=( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 X Y MT )
 
 # ---------------------
 # https://stackoverflow.com/questions/59895/getting-the-source-directory-of-a-bash-script-from-within
-export DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-export BIN=${DIR}
-export DATADIR=${DIR}/../data
-export WORKINGDIR=${DIR}/../work
-export DISTRIBDIR=${DIR}/../dist
+export DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd ".." && pwd )"
+export BIN=${DIR}/bin
+export DATADIR=${DIR}/data
+export WORKINGDIR=${DIR}/work
+export DISTRIBDIR=${DIR}/dist
 
 export PYTHONPATH=${DIR}/lib:${PYTHONPATH:-.}
 
@@ -48,6 +51,8 @@ export COUNTCMD="${PYTHON} ${BIN}/countPCrels.py"
 # ---------------------
 ${MKDIR} -p ${DATADIR}
 ${MKDIR} -p ${WORKINGDIR}
+${MKDIR} -p ${DISTRIBDIR}
+${MKDIR} -p ${DISTRIBDIR}/archive
 
 # ---------------------
 export LOGFILE=${WORKINGDIR}/LOG.${DATESTAMP}
@@ -57,7 +62,7 @@ ${TOUCH} ${LOGFILE}
 # Echos its arguments to the log file. Prepends a datetime stamp.
 #
 function logit {
-    echo `date` "$*" >> ${LOGFILE}
+    echo `${DATE}` "$*" >> ${LOGFILE}
 }
 
 # ---------------------

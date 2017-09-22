@@ -17,7 +17,7 @@ for m in gff3.models(sys.stdin):
 	    continue
     if len(m.children) == 0:
         continue
-    for f in gff3.flattenModel(m):
+    for f in gff3.flattenModel2(m):
         sys.stdout.write(str(f))
     #
     sys.stdout.write("###\n")
