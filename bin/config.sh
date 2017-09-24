@@ -20,11 +20,14 @@ export PSLREPS=pslReps
 export GREP=grep
 export RM=rm
 export LN=ln
+export MV=mv
+export FIND=find
 
 # ---------------------
 #
 export DATESTAMP=`${DATE} +"%Y-%m-%d"`
-export DATESTAMP2=`${DATE} +"%Y%m"`
+export DATESTAMP2=`${DATE} +"%Y%m%d.%H%M%S"`
+export YEAR=`${DATE} +"%Y"`
 
 # ---------------------
 export BLAT_HOST="bhmgiapp01.jax.org"
@@ -40,6 +43,12 @@ export BIN=${DIR}/bin
 export DATADIR=${DIR}/data
 export WORKINGDIR=${DIR}/work
 export DISTRIBDIR=${DIR}/dist
+export ARCHIVEDIR=${DISTRIBDIR}/archive
+export MONTHLYDIR=${ARCHIVEDIR}/monthly
+export ANNUALDIR=${ARCHIVEDIR}/annual
+
+# Age limit in days. Archived files older than this are culled to one per year.
+export ARCHIVEAGELIMIT=365
 
 export PYTHONPATH=${DIR}/lib:${PYTHONPATH:-.}
 
@@ -52,7 +61,9 @@ export COUNTCMD="${PYTHON} ${BIN}/countPCrels.py"
 ${MKDIR} -p ${DATADIR}
 ${MKDIR} -p ${WORKINGDIR}
 ${MKDIR} -p ${DISTRIBDIR}
-${MKDIR} -p ${DISTRIBDIR}/archive
+${MKDIR} -p ${ARCHIVEDIR}
+${MKDIR} -p ${MONTHLYDIR}
+${MKDIR} -p ${ANNUALDIR}
 
 # ---------------------
 export LOGFILE=${WORKINGDIR}/LOG.${DATESTAMP}

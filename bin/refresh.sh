@@ -215,20 +215,46 @@ fi
 # DISTRIB phase
 if [ $nargs -eq 0 -o $dodistrib == T ]; then
     function distrib {
-	filename=$(basename "$1")
-	extension="${filename##*.}"
-	filenameNoExt="${filename%.*}"
-	nfn=${DISTRIBDIR}/archive/${filenameNoExt}.${DATESTAMP2}.${extension}
-	logit "Copying $1 to ${nfn} ..."
-	${CP} $1 ${nfn}
+	#
+	filename=$(basename "$1")		# e.g. MGI.exome.gff3
+	extension="${filename##*.}"		# .gff3
+	filenameNoExt="${filename%.*}"		# MGI.exome
+	distfile=${DISTRIBDIR}/${filename}	# /path/to/dist/MGI.exome.gff3
+	datestampedname=${filenameNoExt}.${DATESTAMP2}.${extension} # MGI.exome.20170922.gff3
+	monthlyfile=${MONTHLYDIR}/${datestampedname}  # /path/to/monthly/MGI.exome.20170922.gff3
+	annualname=${filenameNoExt}.${YEAR}.${extension} # MGI.exome.2017.gff3
+	annualfile=${ARCHIVEDIR}/annual/${annualname} # /path/to/annuals/MGI.exome.2017.gff3
+
+	#
+	logit "Creating monthly: ${monthlyfile}"
+	${CP} $1 ${monthlyfile}
 	checkExit
 
-	symLinkName=${DISTRIBDIR}/${filename}
-	${RM} -f ${symLinkName}
-	${LN} -s ${nfn} ${symLinkName}
+	#
+	if [ ! -e ${annualfile} ]; then
+	    logit "Creating annual: ${annualfile}"
+	    ${CP} $1 ${annualfile}
+	    checkExit
+	fi
+
+	#
+	logit "Creating symlink: ${distfile} -> ${monthlyfile}"
+	${RM} -f ${distfile}
+	${LN} -s ${monthlyfile} ${distfile}
+	checkExit
+
+	# 
+	logit "Checking archive..."
+	# list of files in the monthly archive older that the age limit:
+	oldfiles=(`${FIND} ${MONTHLYDIR}/* -maxdepth 0 -mtime +${ARCHIVEAGELIMIT} `)
+	if [ ${#oldfiles[@]} -gt 0 ]; then
+	    logit "Deleting ${#oldfiles[@]} archive files: ${oldfiles[*]}"
+	    ${RM} ${oldfiles[*]}
+	    checkExit
+	fi
     }
-    distrib ${WORKINGDIR}/MGI.gff3
-    distrib ${WORKINGDIR}/MGI.agr.gff3 
+    #distrib ${WORKINGDIR}/MGI.gff3
+    #distrib ${WORKINGDIR}/MGI.agr.gff3 
     distrib ${WORKINGDIR}/MGI.exome.gff3
     checkExit
 fi
