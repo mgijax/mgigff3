@@ -5,7 +5,7 @@ source config.sh
 nargs=$#
 
 domgi=F
-domgicomputed=F
+doblat=F
 doncbi=F
 doensembl=F
 domirbase=F
@@ -21,7 +21,7 @@ do
 	domgi=T
         ;;
     mgicom*)
-	domgicomputed=T
+	doblat=T
         ;;
     ncbi)
 	doncbi=T
@@ -62,8 +62,8 @@ logit "Starting refresh..."
 if [ $nargs -eq 0 -o $domgi == T ]; then
     # Queries MGI data. Writes genes and pseudogenes into gff3 file. Each has Dbxrefs containing
     # any provider model ids. Downstream merging will be directed by this data.
-    logit 'prepMgi...'
-    ${PYTHON} ${BIN}/prepMgi.py 2>> ${LOGFILE} | ${SORTCMD} | ${SPLITCMD} -t "mgi.chr%s.gff" 
+    logit 'mgi prep...'
+    ${PYTHON} ${BIN}/mgiPrep.py 2>> ${LOGFILE} | ${SORTCMD} | ${SPLITCMD} -t "mgi.chr%s.gff" 
     checkExit
 
     logit 'Counting mgi after prep...'
@@ -74,16 +74,16 @@ fi
 
 ########
 # MGI computed
-if [ $nargs -eq 0 -o $domgicomputed == T ]; then
+if [ $nargs -eq 0 -o $doblat == T ]; then
     # Computes Blat'ed models for MGI genes that don't have models but do have good enough
     # sequences. The sequences are blatted against the mouse genome, and the best scoring
     # hits are made into models. 
-    logit "prepMgiComputed..."
-    ${BIN}/refreshMgiComputed.sh 2>> ${LOGFILE}  | ${SPLITCMD} -t "mgicomputed.chr%s.gff"
+    logit "blat models refresh..."
+    ${BIN}/blatRefresh 2>> ${LOGFILE}  | ${SPLITCMD} -t "blat.chr%s.gff"
     checkExit
 
-    logit 'Counting mgicomputed after prep...'
-    ${COUNTCMD} ${WORKINGDIR}/mgicomputed.chr*.gff > ${WORKINGDIR}/mgicomputed.counts.txt
+    logit 'Counting blat models after prep...'
+    ${COUNTCMD} ${WORKINGDIR}/blat.chr*.gff > ${WORKINGDIR}/blat.counts.txt
     checkExit
 
 fi
@@ -103,8 +103,8 @@ if [ $nargs -eq 0 -o $doncbi == T ]; then
     ${COUNTCMD} ${DATADIR}/${NCBIfile} > ${DATADIR}/ncbi.counts.txt
     checkExit
 
-    logit 'Prep ncbi...'
-    ${PYTHON} ${BIN}/prepNcbi.py 2>> ${LOGFILE} < ${DATADIR}/${NCBIfile} | ${SPLITCMD} -t "ncbi.chr%s.gff"
+    logit 'ncbi prep...'
+    ${PYTHON} ${BIN}/ncbiPrep.py 2>> ${LOGFILE} < ${DATADIR}/${NCBIfile} | ${SPLITCMD} -t "ncbi.chr%s.gff"
     checkExit
 
     logit 'Counting ncbi after prep...'
@@ -128,8 +128,8 @@ if [ $nargs -eq 0 -o $domirbase == T ]; then
     ${COUNTCMD} ${DATADIR}/${MIRfile} > ${DATADIR}/mirbase.counts.txt
     checkExit
 
-    logit 'prepMirbase...'
-    ${PYTHON} ${BIN}/prepMirbase.py 2>> ${LOGFILE} < ${DATADIR}/${MIRfile} | ${SPLITCMD} -t "mirbase.chr%s.gff"
+    logit 'mirbase prep...'
+    ${PYTHON} ${BIN}/mirbasePrep.py 2>> ${LOGFILE} < ${DATADIR}/${MIRfile} | ${SPLITCMD} -t "mirbase.chr%s.gff"
     checkExit
 
     logit 'Counting mirbase after prep...'
@@ -156,8 +156,8 @@ if [ $nargs -eq 0 -o $doensembl == T ]; then
     ${COUNTCMD} ${DATADIR}/${ENSEMBLfile} > ${DATADIR}/ensembl.counts.txt
     checkExit
 
-    logit 'Prep ensembl...'
-    ${PYTHON} ${BIN}/prepEnsembl.py 2>> ${LOGFILE} < ${DATADIR}/${ENSEMBLfile} | ${SPLITCMD} -t "ensembl.chr%s.gff"
+    logit 'ensembl prep...'
+    ${PYTHON} ${BIN}/ensemblPrep.py 2>> ${LOGFILE} < ${DATADIR}/${ENSEMBLfile} | ${SPLITCMD} -t "ensembl.chr%s.gff"
     checkExit
 
     logit 'Counting ensembl after prep...'
