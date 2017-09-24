@@ -1,0 +1,12 @@
+*.pyc
+*.gff
+*.gff3
+*.gz
+.DS_Store
+._.DS_Store
+bin/lib/easy-install.pth
+bin/lib/intermine-1.09.09-py2.7.egg
+bin/lib/site.py
+work*
+dist*
+
