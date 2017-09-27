@@ -48,7 +48,7 @@ for f in gff3.iterate( sys.stdin ):
 	#
 	# Transcript feature
 	#
-	f[2] = 'miRNA_primary_transcript'
+	f[2] = 'pre_miRNA' # per AGR
 	f.Parent = i
 	f.transcript_id = f.ID
 	nt = tCounts.setdefault(i,0) + 1
@@ -56,7 +56,7 @@ for f in gff3.iterate( sys.stdin ):
 	f.ID = i + "_T"
 	tMap[i] = f.ID
 	sys.stdout.write(str(f))
-    elif f[2] == "miRNA":
+    elif f[2] == "miRNA": # per AGR
 	#
 	# Exon-level feature
 	#
