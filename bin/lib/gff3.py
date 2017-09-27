@@ -270,6 +270,7 @@ def iterate(source, returnGroups=False, returnHeader=False):
     header = None
     if returnHeader: header = []
     for lineNum, line in enumerate(source):
+	if len(line.strip()) == 0 : continue
 	if line.startswith(COMMENT_CHAR):
 	    if header is not None:
 	        header.append(line)
@@ -321,10 +322,10 @@ def iterate(source, returnGroups=False, returnHeader=False):
 #   feature of a model, m, m.children is the list of transcripts, and foreach transcript, t,
 #   t.parents == [m].
 #
-def models(features, flatten=False):
+def models(features, flatten=False, returnHeader=False):
     if type(features) is types.StringType \
     or type(features) is types.FileType:
-        features = iterate(features)
+        features = iterate(features, returnHeader=returnHeader)
     #
     id2feature = {}
     models = []
