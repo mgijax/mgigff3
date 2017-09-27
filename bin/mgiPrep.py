@@ -16,8 +16,8 @@
 # Writes GFF3 file.
 #
 
+import sys
 from intermine.webservice import Service
-import gff3
 #
 TAB	= "\t"
 #
@@ -44,6 +44,9 @@ def getFeatures():
 	"crossReferences.identifier", 
 	"crossReferences.source.name"
     )
+    query.add_sort_order("SequenceFeature.chromosomeLocation.locatedOn.primaryIdentifier", "ASC")
+    query.add_sort_order("SequenceFeature.chromosomeLocation.start", "ASC")
+    #
     query.add_constraint("organism.taxonId", "=", "10090", code = "B")
     query.add_constraint("dataSets.name", "=", "Mouse Gene Catalog from MGI", code = "C")
     query.add_constraint("crossReferences.source.name", "ONE OF", 
@@ -54,6 +57,10 @@ def getFeatures():
 
 #
 def main():
+    # FIXME: due to a bug in the Intermine client lib, the sort orders in the query are being ignored.
+    # This forces us to accumulate results and sort internally before outputting anything.
+    # Once the intermine bug is fixed, we should be able to output features in the order returned by the query.
+    feats = []
     for f in getFeatures():
 	soterm = f.sequenceOntologyTerm.name
 	if "gene" in soterm or "pseudo" in soterm or "lnc_RNA" in soterm or "lncRNA" in soterm:
@@ -83,6 +90,14 @@ def main():
 
 		    }
 		])
-		print str(g),
+		feats.append(g)
+    # end for loop
+
+    feats.sort( lambda a,b: cmp((a.seqid,a.start), (b.seqid,b.start)) )
+    for f in feats:
+        sys.stdout.write(str(f))
+
 #
 main()
+
+
