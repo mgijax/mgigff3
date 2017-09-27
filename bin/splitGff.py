@@ -9,7 +9,7 @@ import gff3
 import argparse
 
 parser = argparse.ArgumentParser(description='Split a GFF file into multiple files, based on chromosome.')
-parser.add_argument('-d', '--dir', default=',', help='template for naming the files')
+parser.add_argument('-d', '--dir', default='.', help='template for naming the files')
 parser.add_argument('-t', '--tmplt', default='chr%s.gff', help='template for naming the files')
 
 args = parser.parse_args()
