@@ -5,7 +5,7 @@
 
 source config.sh
 
-FILE=${WORKINGDIR}/MGI.gff3
+FILE=$1
 
 # Run some basic sanity checks on the final result.
 
@@ -41,7 +41,7 @@ try \
     "Number of miRNA products" \
     `grep "	miRNA	" ${FILE} | wc -l` \
     -gt \
-    2500
+    2000
 
 ###
 try \

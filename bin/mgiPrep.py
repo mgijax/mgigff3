@@ -16,6 +16,7 @@
 # Writes GFF3 file.
 #
 
+import gff3
 import sys
 from intermine.webservice import Service
 #
@@ -68,6 +69,13 @@ def main():
 	    s = f.chromosomeLocation.strand
 	    strand = "+" if s == "+1" else "-" if s == "-1" else "."
 	    dbxrefs = [ pnameMap[xr.source.name] + ":" + xr.identifier for xr in f.crossReferences ]
+	    #
+	    soterm = f.sequenceOntologyTerm.name
+	    if soterm in ["lncRNA","lnc_RNA"]:
+	        soterm = "lncRNA_gene"
+	    elif soterm == "antisense_lncRNA":
+		# SO has no term for "antisense lncRNA gene"
+	        soterm = "lncRNA_gene"
 	    # filter out genes with no model IDs
 	    if len(dbxrefs) > 0:
 		g = gff3.Feature([
@@ -83,7 +91,7 @@ def main():
 			"ID": f.primaryIdentifier,
 			"curie":  f.primaryIdentifier,
 			"gene_id": f.primaryIdentifier,
-			"so_term_name" : f.sequenceOntologyTerm.name,
+			"so_term_name" : soterm,
 			"Name": f.symbol,
 			"description": f.name,
 			"Dbxref" : dbxrefs

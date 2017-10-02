@@ -243,7 +243,7 @@ if [ $nargs -eq 0 -o $docat == T ]; then
     cat ${WORKINGDIR}/chr*.gff >> ${WORKINGDIR}/MGI.gff3 2>> ${LOGFILE}
 
     logit "Running acceptance tests..."
-    ${BIN}/acceptance.sh 2>> ${LOGFILE}
+    ${BIN}/acceptance.sh ${WORKINGDIR}/MGI.gff3 2>> ${LOGFILE}
     checkExit
 
     logit "Generating sample file..."
@@ -269,6 +269,10 @@ fi
 if [ $nargs -eq 0 -o $doagr == T ]; then
     logit "Generating GFF3 file for AGR..."
     ${PYTHON} ${BIN}/trimForAgr.py < ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.agr.gff3 2>> ${LOGFILE}
+    checkExit
+
+    logit "Running acceptance tests..."
+    ${BIN}/acceptance.sh ${WORKINGDIR}/MGI.agr.gff3 2>> ${LOGFILE}
     checkExit
 fi
 
@@ -314,8 +318,8 @@ if [ $nargs -eq 0 -o $dodistrib == T ]; then
 	    checkExit
 	fi
     }
-    #distrib ${WORKINGDIR}/MGI.gff3
-    #distrib ${WORKINGDIR}/MGI.agr.gff3 
+    distrib ${WORKINGDIR}/MGI.gff3
+    distrib ${WORKINGDIR}/MGI.agr.gff3 
     distrib ${WORKINGDIR}/MGI.exome.gff3
     checkExit
 fi
