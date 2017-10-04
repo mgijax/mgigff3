@@ -1,8 +1,8 @@
 #
-# countPCrels.py
+# profileGff.py
 #
-# Shows the counts of distinct pairs (p.type, c.type) where
-# p is a feature and c is a child of p.
+# Generates a report of feature types and parent/child relationships
+# in a gff3 file.
 #
 
 import gff3
@@ -16,7 +16,9 @@ exemplars = {}
 
 def count(f, path, root):
     if len(f.parents) == 0:
-	roots[f.type] = roots.get(f.type,0) + 1
+	stn = f.attributes.get("so_term_name",None)
+	tp = f.type + ("[%s]"%stn if stn else "")
+	roots[tp] = roots.get(tp,0) + 1
     if len(f.parents) and len(f.children):
         mids[f.type] = mids.get(f.type,0) + 1
     if len(f.children) == 0:
@@ -40,19 +42,19 @@ def pcounts(msg, counts):
 def main(featureSources):
     for fSource in featureSources:
 	for m in gff3.models(fSource):
-	    count(m, [m.type], m)
+	    stn = m.attributes.get("so_term_name",None)
+	    count(m, [m.type+("[%s]"%stn if stn else "")], m)
     #
     pcounts("root", roots)
     pcounts("mid", mids)
     pcounts("leaf", leaves)
-    pcounts("path", paths)
     for k in exemplars:
 	es = list(exemplars[k])
 	es.sort()
 	if len(es) > 5:
 	    es = es[::len(es)/5]
-        exemplars[k] = "," .join(es)
-    pcounts("exemplars", exemplars)
+        paths[k] = str(paths[k])+ "\t" + "," .join(es)
+    pcounts("path", paths)
 
 #
 ins = sys.argv[1:]if len(sys.argv) >= 2 else [ sys.stdin ]
