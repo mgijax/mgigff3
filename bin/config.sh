@@ -55,7 +55,7 @@ export PYTHONPATH=${DIR}/lib:${PYTHONPATH:-.}
 # ---------------------
 export SORTCMD="sort -k 1,1 -k 4n,4n -k 5nr,5nr"
 export SPLITCMD="${PYTHON} ${BIN}/splitGff.py -d ${WORKINGDIR}"
-export COUNTCMD="${PYTHON} ${BIN}/countPCrels.py"
+export COUNTCMD="${PYTHON} ${BIN}/profileGff.py"
 
 # ---------------------
 ${MKDIR} -p ${DATADIR}

@@ -35,7 +35,7 @@ The prep'd gff3's are split into separate files by chromosome. (e.g., ncbi.chr6.
 	      3. match_part - a block within the alignment. Often multiple for an alignments.
 The other names run that part of the pipeline:
     * merge - the prep'd gff3 models are merged (and the models within them are also merged) by chromosome (see merge.py). Outputs one file per chromosome (e.g., chr6.gff). 
-    * cat - Concatenates the chromosome files to generate MGI.gff3. Also generates statistics (countPCrels.py, generates MGI.counts.txt)
+    * cat - Concatenates the chromosome files to generate MGI.gff3. Also generates statistics (profileGff.py, generates MGI.counts.txt)
     * exome - the MGI exome (MGI.exome.gff3) file is generated from MGI.gff3 (see exome.py)
     * agr - the AGR file (MGI.agr.gff) is generated from MGI.gff3
     * distrib - the output files are copied to the distribution directory. Any archive handling would also go here.
