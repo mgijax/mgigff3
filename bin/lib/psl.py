@@ -192,6 +192,7 @@ def toGff(input):
 		'.',
 	        {
 		    'ID'    : aid,
+		    'Name'  : a.qName,
 		    'qName' : a.qName,
 		    'matchLen' : a.matchLength(),
 		    'pctIdentity' : a.percentIdentity(),

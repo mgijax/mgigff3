@@ -49,7 +49,7 @@ class MgiComputedMerger:
 
     def loadPslFile(self):
 	# Each PSL line is parsed and turned into a gff3 feature hierarchy (match->match_part*)
-	# Here we iterate over the model roots (matches); the match_parse dangle below (f.children)
+	# Here we iterate over the model roots (matches); the match_parts dangle below (f.children)
 	for f in gff3.models(psl.toGff(self.pslFile)):
 	    # 
 	    seqid = f.qName.split(".")[0]	# get the seqid w/o version number
@@ -57,7 +57,11 @@ class MgiComputedMerger:
 	    mfeats = self.mgi2feats[mgiid]	# list containing the gene followed by its match features
 	    mf = mfeats[0]			# the top-level mgi feature
 	    #
-	    # All the features n the model need tweaking:
+	    if f.strand != mf.strand and mf.strand != ".":
+	        self.log("REJECTING SEQUENCE - Seqid (%s) for gene (%s) matches on wrong stand\n"%(seqid,mgiid))
+		continue
+	    #
+	    # All the features in the model need tweaking:
 	    for ff in gff3.flattenModel(f):
 		# "chromosome: replace "chr5" for example with just "5"
 		ff.seqid = ff.seqid.replace("chr","")

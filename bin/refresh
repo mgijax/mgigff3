@@ -130,6 +130,7 @@ if [ $nargs -eq 0 -o $doblat == T ]; then
     logit "Generating blat models..."
     ${BIN}/blatRefresh 2>> ${LOGFILE} > ${WORKINGDIR}/blat.gff
     checkExit
+
     ${SPLITCMD} -t "blat.chr%s.gff" < ${WORKINGDIR}/blat.gff
     checkExit
 
