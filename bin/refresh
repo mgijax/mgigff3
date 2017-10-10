@@ -86,33 +86,40 @@ ENDHEADER
 function refreshProvider {
     provider=$1
     url=$2
-    extension=${url##*.}
     prepCmd=$3
-
     #
+    downloaded=${DATADIR}/${provider}.gff
+    dprofile=${DATADIR}/${provider}.counts.txt
+    prepped=${WORKINGDIR}/${provider}.gff
+    pprofile=${WORKINGDIR}/${provider}.counts.txt
+    splitpattern=${provider}.chr%s.gff
+    splitpattern2=${WORKINGDIR}/${provider}.chr*.gff
+    headerfile=${WORKINGDIR}/${provider}.header
+    #
+
+
     logit 'Downloading $provider'
-    if [ ${extension} == "gz" ]; then
-	${CURL} ${url} | ${GUNZIP} > ${DATADIR}/${provider}.gff
-	checkExit
-    else
-	${CURL} ${url} > ${DATADIR}/${provider}.gff
-	checkExit
-    fi
+    ${CURL} ${url} > ${downloaded} 2>> ${LOGFILE}
+    checkExit
 
     logit 'Counting $provider downloaded...'
-    ${COUNTCMD} ${DATADIR}/${provider} > ${DATADIR}/${provider}.counts.txt
+    ${COUNTCMD} ${downloaded} > ${dprofile} 2>> ${LOGFILE}
     checkExit
 
     logit 'Prepping ${provider}...'
-    #${PYTHON} ${BIN}/mirbasePrep.py 2>> ${LOGFILE} < ${DATADIR}/${MIRfile} | ${SPLITCMD} -t "mirbase.chr%s.gff"
+    $prepCmd < ${downloaded} > ${prepped} 2>> ${LOGFILE}
+    checkExit
+
+    logit 'Splitting...'
+    ${SPLITCMD} -t "${splitpattern}" < ${prepped} 2>> ${LOGFILE}
     checkExit
 
     logit 'Writing header file...'
-    writeHeader ${provider} ${DATADIR}/${provider}.gff ${url} ${WORKINGDIR}/${provider}.header
+    writeHeader ${provider} ${downloaded} ${url} ${headerfile}
     checkExit
 
     logit 'Counting ${provider} after prep...'
-    ${COUNTCMD} ${WORKINGDIR}/${provider}.chr*.gff > ${WORKINGDIR}/${provider}.counts.txt
+    ${COUNTCMD} ${splitpattern2} > ${pprofile} 2>> ${LOGFILE}
     checkExit
 
     return 0
@@ -178,90 +185,20 @@ if [ $nargs -eq 0 -o $doblat == T ]; then
 fi
 
 ########
-# NCBI
+# Refresh providers
 if [ $nargs -eq 0 -o $doncbi == T ]; then
-    NCBIfile=ref_GRCm38.p4_top_level.gff3
-    NCBIurl=ftp://ftp.ncbi.nlm.nih.gov/genomes/Mus_musculus/GFF/${NCBIfile}.gz
-    NCBIprep=${PYTHON} ${BIN}/ncbiPrep.py
-    #
-    logit 'Downloading ncbi'
-    ${CURL} ${NCBIurl} | ${GUNZIP} > ${DATADIR}/${NCBIfile}
-    checkExit
-
-    logit 'Counting ncbi downloaded...'
-    ${COUNTCMD} ${DATADIR}/${NCBIfile} > ${DATADIR}/ncbi.counts.txt
-    checkExit
-
-    logit 'Prepping ncbi...'
-    ${PYTHON} ${BIN}/ncbiPrep.py 2>> ${LOGFILE} < ${DATADIR}/${NCBIfile} | ${SPLITCMD} -t "ncbi.chr%s.gff"
-    checkExit
-
-    logit 'Writing header file...'
-    writeHeader "NCBI_Gene" ${DATADIR}/${NCBIfile} ${NCBIurl} ${WORKINGDIR}/ncbi.header
-    checkExit
-
-    logit 'Counting ncbi after prep...'
-    ${COUNTCMD} ${WORKINGDIR}/ncbi.chr*.gff > ${WORKINGDIR}/ncbi.counts.txt
-    checkExit
-
+    # NCBI
+    refreshProvider "ncbi" "${NCBIurl}" "${NCBIprep}"
 fi
 
-########
-# miRBase
 if [ $nargs -eq 0 -o $domirbase == T ]; then
-    MIRfile=mmu.gff3
-    MIRurl=ftp://mirbase.org/pub/mirbase/CURRENT/genomes/${MIRfile}
-    #
-    refreshProvider "mirbase" "${MIRurl}"
-
-    logit 'Downloading mirbase'
-    ${CURL} ${MIRurl} > ${DATADIR}/${MIRfile}
-    checkExit
-
-    logit 'Counting mirbase downloaded...'
-    ${COUNTCMD} ${DATADIR}/${MIRfile} > ${DATADIR}/mirbase.counts.txt
-    checkExit
-
-    logit 'Prepping mirbase...'
-    ${PYTHON} ${BIN}/mirbasePrep.py 2>> ${LOGFILE} < ${DATADIR}/${MIRfile} | ${SPLITCMD} -t "mirbase.chr%s.gff"
-    checkExit
-
-    logit 'Writing header file...'
-    writeHeader "miRBase" ${DATADIR}/${MIRfile} ${MIRurl} ${WORKINGDIR}/mirbase.header
-    checkExit
-
-    logit 'Counting mirbase after prep...'
-    ${COUNTCMD} ${WORKINGDIR}/mirbase.chr*.gff > ${WORKINGDIR}/mirbase.counts.txt
-    checkExit
+    # miRBase
+    refreshProvider "mirbase" "${MIRurl}" "${MIRprep}"
 fi
 
-########
-# ENSEMBL
 if [ $nargs -eq 0 -o $doensembl == T ]; then
-    ENSEMBLver=90
-    ENSEMBLfile=Mus_musculus.GRCm38.${ENSEMBLver}.gff3
-    ENSEMBLurl=ftp://ftp.ensembl.org/pub/release-${ENSEMBLver}/gff3/mus_musculus/${ENSEMBLfile}.gz
-    #
-    logit 'Downloading ensembl...'
-    ${CURL} ${ENSEMBLurl} | ${GUNZIP} > ${DATADIR}/${ENSEMBLfile}
-    checkExit
-
-    logit 'Counting ensembl downloaded...'
-    ${COUNTCMD} ${DATADIR}/${ENSEMBLfile} > ${DATADIR}/ensembl.counts.txt
-    checkExit
-
-    logit 'Prepping ensembl...'
-    ${PYTHON} ${BIN}/ensemblPrep.py 2>> ${LOGFILE} < ${DATADIR}/${ENSEMBLfile} | ${SPLITCMD} -t "ensembl.chr%s.gff"
-    checkExit
-
-    logit 'Writing header file...'
-    writeHeader "ENSEMBL" ${DATADIR}/${ENSEMBLfile} ${ENSEMBLurl} ${WORKINGDIR}/ensembl.header
-    checkExit
-
-    logit 'Counting ensembl after prep...'
-    ${COUNTCMD} ${WORKINGDIR}/ensembl.chr*.gff > ${WORKINGDIR}/ensembl.counts.txt
-    checkExit
-
+    # ENSEMBL
+    refreshProvider "ensembl" "${ENSEMBLurl}" "${ENSEMBLprep}"
 fi
 
 ########
