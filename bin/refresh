@@ -61,6 +61,8 @@ done
 logit "================================================================================="
 logit "Starting refresh..." 
 
+#######
+
 function writeHeader {
     provider=$1
     file=$2
@@ -79,6 +81,42 @@ function writeHeader {
 ENDHEADER
 }
 
+#######
+
+function refreshProvider {
+    provider=$1
+    url=$2
+    extension=${url##*.}
+    prepCmd=$3
+
+    #
+    logit 'Downloading $provider'
+    if [ ${extension} == "gz" ]; then
+	${CURL} ${url} | ${GUNZIP} > ${DATADIR}/${provider}.gff
+	checkExit
+    else
+	${CURL} ${url} > ${DATADIR}/${provider}.gff
+	checkExit
+    fi
+
+    logit 'Counting $provider downloaded...'
+    ${COUNTCMD} ${DATADIR}/${provider} > ${DATADIR}/${provider}.counts.txt
+    checkExit
+
+    logit 'Prepping ${provider}...'
+    #${PYTHON} ${BIN}/mirbasePrep.py 2>> ${LOGFILE} < ${DATADIR}/${MIRfile} | ${SPLITCMD} -t "mirbase.chr%s.gff"
+    checkExit
+
+    logit 'Writing header file...'
+    writeHeader ${provider} ${DATADIR}/${provider}.gff ${url} ${WORKINGDIR}/${provider}.header
+    checkExit
+
+    logit 'Counting ${provider} after prep...'
+    ${COUNTCMD} ${WORKINGDIR}/${provider}.chr*.gff > ${WORKINGDIR}/${provider}.counts.txt
+    checkExit
+
+    return 0
+}
 
 ########
 # MGI
@@ -144,6 +182,7 @@ fi
 if [ $nargs -eq 0 -o $doncbi == T ]; then
     NCBIfile=ref_GRCm38.p4_top_level.gff3
     NCBIurl=ftp://ftp.ncbi.nlm.nih.gov/genomes/Mus_musculus/GFF/${NCBIfile}.gz
+    NCBIprep=${PYTHON} ${BIN}/ncbiPrep.py
     #
     logit 'Downloading ncbi'
     ${CURL} ${NCBIurl} | ${GUNZIP} > ${DATADIR}/${NCBIfile}
@@ -173,6 +212,8 @@ if [ $nargs -eq 0 -o $domirbase == T ]; then
     MIRfile=mmu.gff3
     MIRurl=ftp://mirbase.org/pub/mirbase/CURRENT/genomes/${MIRfile}
     #
+    refreshProvider "mirbase" "${MIRurl}"
+
     logit 'Downloading mirbase'
     ${CURL} ${MIRurl} > ${DATADIR}/${MIRfile}
     checkExit

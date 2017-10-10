@@ -58,6 +58,21 @@ export SPLITCMD="${PYTHON} ${BIN}/splitGff.py -d ${WORKINGDIR}"
 export COUNTCMD="${PYTHON} ${BIN}/profileGff.py"
 
 # ---------------------
+export NCBIfile=ref_GRCm38.p4_top_level.gff3
+export NCBIurl=ftp://ftp.ncbi.nlm.nih.gov/genomes/Mus_musculus/GFF/${NCBIfile}.gz
+export NCBIprep="${PYTHON} ${BIN}/ncbiPrep.py"
+#
+export MIRfile=mmu.gff3
+export MIRurl=ftp://mirbase.org/pub/mirbase/CURRENT/genomes/${MIRfile}
+export MIRprep="${PYTHON} ${BIN}/mirbasePrep.py"
+#
+export ENSEMBLver=90
+export ENSEMBLfile=Mus_musculus.GRCm38.${ENSEMBLver}.gff3
+export ENSEMBLurl=ftp://ftp.ensembl.org/pub/release-${ENSEMBLver}/gff3/mus_musculus/${ENSEMBLfile}.gz
+export ENSEMBLprep="${PYTHON} ${BIN}/ensemblPrep.py"
+#
+
+# ---------------------
 ${MKDIR} -p ${DATADIR}
 ${MKDIR} -p ${WORKINGDIR}
 ${MKDIR} -p ${DISTRIBDIR}
