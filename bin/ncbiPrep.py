@@ -179,9 +179,16 @@ class ConvertNCBI:
 	    c.type = "pseudogenic_exon"
 	gff3.crossReference([m, t] + list(m.children))
         
+    #
+    def checkTranscriptNames(self, m):
+        for f in gff3.flattenModel(m):
+	    if len(f.parents) and len(f.children) and "Name" not in f.attributes:
+		f.Name = list(f.parents)[0].curie + "_" + f.type
+
     def main(self):
 	for m in gff3.models(self.pre(sys.stdin)):
 	   self.checkPseudogene(m)
+	   self.checkTranscriptNames(m)
 	   for f in gff3.flattenModel(m):
 	       print str(f),
 
