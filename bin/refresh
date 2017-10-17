@@ -88,6 +88,8 @@ function refreshProvider {
     url=$2
     prepCmd=$3
     #
+    extension="${url##*.}"
+    #
     downloaded=${DATADIR}/${provider}.gff
     dprofile=${DATADIR}/${provider}.counts.txt
     prepped=${WORKINGDIR}/${provider}.gff
@@ -98,27 +100,32 @@ function refreshProvider {
     #
 
 
-    logit 'Downloading $provider'
-    ${CURL} ${url} > ${downloaded} 2>> ${LOGFILE}
-    checkExit
+    logit "Downloading ${provider}: $url"
+    if [ ${extension} = "gz" ]; then
+	${CURL} ${url} 2>> ${LOGFILE} | ${GUNZIP} > ${downloaded} 2>> ${LOGFILE}
+	checkExit
+    else
+	${CURL} ${url} > ${downloaded} 2>> ${LOGFILE}
+	checkExit
+    fi
 
-    logit 'Counting $provider downloaded...'
+    logit "Counting $provider downloaded..."
     ${COUNTCMD} ${downloaded} > ${dprofile} 2>> ${LOGFILE}
     checkExit
 
-    logit 'Prepping ${provider}...'
+    logit "Prepping ${provider}..."
     $prepCmd < ${downloaded} > ${prepped} 2>> ${LOGFILE}
     checkExit
 
-    logit 'Splitting...'
+    logit "Splitting..."
     ${SPLITCMD} -t "${splitpattern}" < ${prepped} 2>> ${LOGFILE}
     checkExit
 
-    logit 'Writing header file...'
+    logit "Writing header file..."
     writeHeader ${provider} ${downloaded} ${url} ${headerfile}
     checkExit
 
-    logit 'Counting ${provider} after prep...'
+    logit "Counting ${provider} after prep..."
     ${COUNTCMD} ${splitpattern2} > ${pprofile} 2>> ${LOGFILE}
     checkExit
 
@@ -130,13 +137,13 @@ function refreshProvider {
 if [ $nargs -eq 0 -o $domgi == T ]; then
     # Queries MGI data. Writes genes and pseudogenes into gff3 file. Each has Dbxrefs containing
     # any provider model ids. Downstream merging will be directed by this data.
-    logit 'Prepping mgi ...'
+    logit "Prepping mgi ..."
     ${PYTHON} ${BIN}/mgiPrep.py 2>> ${LOGFILE} > ${WORKINGDIR}/mgi.gff
     checkExit
     ${SPLITCMD} -t "mgi.chr%s.gff" < ${WORKINGDIR}/mgi.gff
     checkExit
 
-    logit 'Writing header file...'
+    logit "Writing header file..."
     # Naming the MGI header file "0" to ensure it come first
     cat > ${WORKINGDIR}/0.header <<END1
 #
@@ -161,7 +168,7 @@ if [ $nargs -eq 0 -o $domgi == T ]; then
 END1
     checkExit
 
-    logit 'Counting mgi features...'
+    logit "Counting mgi features..."
     ${COUNTCMD} ${WORKINGDIR}/mgi.chr*.gff > ${WORKINGDIR}/mgi.counts.txt
     checkExit
 fi
@@ -179,7 +186,7 @@ if [ $nargs -eq 0 -o $doblat == T ]; then
     ${SPLITCMD} -t "blat.chr%s.gff" < ${WORKINGDIR}/blat.gff
     checkExit
 
-    logit 'Counting blat models ...'
+    logit "Counting blat models ..."
     ${COUNTCMD} ${WORKINGDIR}/blat.chr*.gff > ${WORKINGDIR}/blat.counts.txt
     checkExit
 fi
@@ -304,4 +311,4 @@ if [ $nargs -eq 0 -o $dodistrib == T ]; then
 fi
 
 ########
-logit 'Refresh finished. No errors detected.'
+logit "Refresh finished. No errors detected."
