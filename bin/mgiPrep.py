@@ -60,45 +60,49 @@ def getFeatures():
 def main():
     # FIXME: due to a bug in the Intermine client lib, the sort orders in the query are being ignored.
     # This forces us to accumulate results and sort internally before outputting anything.
-    # Once the intermine bug is fixed, we should be able to output features in the order returned by the query.
+    # Once the intermine bug is fixed, we should be able to output features in the order returned 
+    # by the query.
     feats = []
     for f in getFeatures():
 	soterm = f.sequenceOntologyTerm.name
-	if "gene" in soterm or "pseudo" in soterm or "lnc_RNA" in soterm or "lncRNA" in soterm:
-	    col3 = "pseudogene" if "pseudo" in soterm else "gene"
-	    s = f.chromosomeLocation.strand
-	    strand = "+" if s == "+1" else "-" if s == "-1" else "."
-	    dbxrefs = [ pnameMap[xr.source.name] + ":" + xr.identifier for xr in f.crossReferences ]
-	    #
-	    soterm = f.sequenceOntologyTerm.name
-	    if soterm in ["lncRNA","lnc_RNA"]:
-	        soterm = "lncRNA_gene"
-	    elif soterm == "antisense_lncRNA":
-		# SO has no term for "antisense lncRNA gene"
-	        soterm = "lncRNA_gene"
-	    # filter out genes with no model IDs
-	    if len(dbxrefs) > 0:
-		g = gff3.Feature([
-		    f.chromosomeLocation.locatedOn.primaryIdentifier,
-		    "MGI",
-		    col3,
-		    str(f.chromosomeLocation.start),
-		    str(f.chromosomeLocation.end),
-		    ".",
-		    strand,
-		    ".",
-		    {
-			"ID": f.primaryIdentifier,
-			"curie":  f.primaryIdentifier,
-			"gene_id": f.primaryIdentifier,
-			"so_term_name" : soterm,
-			"Name": f.symbol,
-			"description": f.name,
-			"Dbxref" : dbxrefs
+	if not soterm:
+	    continue
+	if not ("gene" in soterm or "pseudo" in soterm or "lnc_RNA" in soterm or "lncRNA" in soterm):
+	    continue
+	col3 = "pseudogene" if "pseudo" in soterm else "gene"
+	s = f.chromosomeLocation.strand
+	strand = "+" if s == "+1" else "-" if s == "-1" else "."
+	dbxrefs = [ pnameMap[xr.source.name] + ":" + xr.identifier for xr in f.crossReferences ]
+	#
+	soterm = f.sequenceOntologyTerm.name
+	if soterm in ["lncRNA","lnc_RNA"]:
+	    soterm = "lncRNA_gene"
+	elif soterm == "antisense_lncRNA":
+	    # SO has no term for "antisense lncRNA gene"
+	    soterm = "lncRNA_gene"
+	# filter out genes with no model IDs
+	if len(dbxrefs) > 0:
+	    g = gff3.Feature([
+		f.chromosomeLocation.locatedOn.primaryIdentifier,
+		"MGI",
+		col3,
+		str(f.chromosomeLocation.start),
+		str(f.chromosomeLocation.end),
+		".",
+		strand,
+		".",
+		{
+		    "ID": f.primaryIdentifier,
+		    "curie":  f.primaryIdentifier,
+		    "gene_id": f.primaryIdentifier,
+		    "so_term_name" : soterm,
+		    "Name": f.symbol,
+		    "description": f.name,
+		    "Dbxref" : dbxrefs
 
-		    }
-		])
-		feats.append(g)
+		}
+	    ])
+	    feats.append(g)
     # end for loop
 
     feats.sort( lambda a,b: cmp((a.seqid,a.start), (b.seqid,b.start)) )

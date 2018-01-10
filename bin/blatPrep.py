@@ -75,6 +75,7 @@ typemap = {
   'tRNA gene'                   : 'tRNA_gene',
   'unclassified gene'           : 'gene',
   'unclassified non-coding RNA gene' : 'ncRNA_gene',
+  'sense intronic lncRNA gene' : 'lncRNA_gene',
 }
 
 for r in db.sql(gwomSequences):
