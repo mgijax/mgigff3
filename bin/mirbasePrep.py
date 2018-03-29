@@ -17,8 +17,7 @@ import sys
 import gff3
 
 seenIds = set()
-tCounts = {}
-tMap = {}
+currRoot = None
 for f in gff3.iterate( sys.stdin ):
     i = f.ID
     if i in seenIds:
@@ -39,8 +38,10 @@ for f in gff3.iterate( sys.stdin ):
 	#
 	# Gene feature
 	#
+	currRoot = f.ID
+	f.ID += "_G"
 	f[2] = 'gene'	# 
-	f.attributes["curie"] = "miRBase:" + f.ID
+	f.attributes["curie"] = "miRBase:" + currRoot
 	f.attributes["so_term_name"] = "miRNA_gene"
 	sys.stdout.write(str(f))
 	f.attributes.pop("curie", None)
@@ -49,12 +50,9 @@ for f in gff3.iterate( sys.stdin ):
 	# Transcript feature
 	#
 	f[2] = 'pre_miRNA' # per AGR
-	f.Parent = i
+	f.Parent = f.ID
+	f.ID = currRoot
 	f.transcript_id = f.ID
-	nt = tCounts.setdefault(i,0) + 1
-	tCounts[i] = nt
-	f.ID = i + "_T"
-	tMap[i] = f.ID
 	sys.stdout.write(str(f))
     elif f[2] == "miRNA": # per AGR
 	#
@@ -63,7 +61,8 @@ for f in gff3.iterate( sys.stdin ):
 	df = f.Derives_from
 	del f.attributes['Derives_from']
 	f.ID = i
-	f.Parent = tMap[df]
+	f.Parent = df
 	f.exon_id = f.ID
-	sys.stdout.write(str(f))
+	if df == currRoot:
+	    sys.stdout.write(str(f))
 
