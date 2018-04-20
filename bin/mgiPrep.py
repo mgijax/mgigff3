@@ -98,7 +98,8 @@ def main():
 		    "so_term_name" : soterm,
 		    "Name": f.symbol,
 		    "description": f.name,
-		    "Dbxref" : dbxrefs
+		    "Dbxref" : dbxrefs,
+		    "mgi_type" : f.mgiType
 
 		}
 	    ])
