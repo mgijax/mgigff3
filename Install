@@ -1,0 +1,23 @@
+#!/bin/sh 
+#
+#  Install
+###########################################################################
+#
+#  Purpose:
+#
+#  Usage:  Install
+#
+###########################################################################
+
+cd `dirname $0`
+
+if [ ! -r Configuration ]
+then
+    echo "Cannot read Configuration file." | tee -a ${LOG}
+    exit 1
+fi
+
+chmod 755 ./bin/refresh
+
+echo "Installation successful."
+exit 0
