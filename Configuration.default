@@ -8,5 +8,7 @@ then
     MGICONFIG=/usr/local/mgi/live/mgiconfig
     export MGICONFIG
 fi
-
 . ${MGICONFIG}/master.config.sh
+
+DISTRIBDIR=${FTPROOT}/pub/mgigff3
+export DISTRIBDIR

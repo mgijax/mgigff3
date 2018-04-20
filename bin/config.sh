@@ -37,12 +37,12 @@ export BLAT_PORT="9038"
 export CHRS=( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 X Y MT )
 
 # ---------------------
-# https://stackoverflow.com/questions/59895/getting-the-source-directory-of-a-bash-script-from-within
-export DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd ".." && pwd )"
 export BIN=${DIR}/bin
 export DATADIR=${DIR}/data
 export WORKINGDIR=${DIR}/work
-export DISTRIBDIR=${DIR}/dist
+if [ "${DISTRIBDIR}" == "" ]; then
+    export DISTRIBDIR=${DIR}/dist
+fi
 export ARCHIVEDIR=${DISTRIBDIR}/archive
 export MONTHLYDIR=${ARCHIVEDIR}/monthly
 export ANNUALDIR=${ARCHIVEDIR}/annual
