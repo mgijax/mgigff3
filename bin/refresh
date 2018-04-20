@@ -6,8 +6,6 @@ export DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd ".." && pwd )"
 source ${DIR}/Configuration
 source ${DIR}/bin/config.sh
 
-env
-exit
 nargs=$#
 
 domgi=F
