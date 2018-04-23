@@ -20,7 +20,7 @@
 #
 #
 
-source config.sh
+source ${DIR}/bin/config.sh
 
 # 1. generate a file of mgi_id/seq_id pairs.
 logit "Blat models: getting MGI data..."
@@ -30,7 +30,7 @@ checkExit
 # 2a. feed the sequence ids (2nd column) to the fetch script
 # this gets the sequences from ncbi and writes to a fasta file
 logit "Blat models: retrieving sequences from NCBI..."
-${CUT} -f 1  ${WORKINGDIR}/blat.seqids.txt | ${PYTHON} seqid2fa.py - ${WORKINGDIR}/blat.seqs.fa
+${CUT} -f 1  ${WORKINGDIR}/blat.seqids.txt | ${PYTHON} ${BIN}/seqid2fa.py - ${WORKINGDIR}/blat.seqs.fa
 checkExit
 
 # 2b. Blat the sequences against the mouse genome assembly
@@ -46,7 +46,7 @@ checkExit
 # 3b. Convert the alignments to GFF3 hierarchies and attach the corresponding MGI id
 # Sends results to standard out. (The caller redirects to a .gff file.)
 logit "Blat models: Generating models..."
-${PYTHON} blatMerge.py ${WORKINGDIR}/blat.pslreps.psl ${WORKINGDIR}/blat.seqids.txt 
+${PYTHON} ${BIN}/blatMerge.py ${WORKINGDIR}/blat.pslreps.psl ${WORKINGDIR}/blat.seqids.txt 
 checkExit
 
 logit "Blat models: finished."

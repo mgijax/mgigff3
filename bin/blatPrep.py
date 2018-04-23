@@ -79,12 +79,13 @@ typemap = {
 }
 
 for r in db.sql(gwomSequences):
+    mcvt = r["mcv_type"]
     line = [
       r["sequenceid"],
       r["markerid"],
       r["symbol"],
       r["name"],
-      r["mcv_type"],
-      typemap[r["mcv_type"]]
+      mcvt,
+      typemap.get(mcvt, mcvt)
     ]
     print "\t".join(line)
