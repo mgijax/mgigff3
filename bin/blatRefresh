@@ -44,10 +44,10 @@ ${PSLREPS} -singleHit -nohead ${WORKINGDIR}/blat.gfclient.psl ${WORKINGDIR}/blat
 checkExit
 
 # 3b. Convert the alignments to GFF3 hierarchies and attach the corresponding MGI id
+# Sends results to standard out. (The caller redirects to a .gff file.)
 logit "Blat models: Generating models..."
 ${PYTHON} blatMerge.py ${WORKINGDIR}/blat.pslreps.psl ${WORKINGDIR}/blat.seqids.txt 
 checkExit
 
 logit "Blat models: finished."
-
 

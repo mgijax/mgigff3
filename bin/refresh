@@ -62,6 +62,8 @@ done
 
 ########
 
+echo "Logging to: " ${LOGFILE}
+#
 logit "================================================================================="
 logit "Starting refresh..." 
 
@@ -187,6 +189,7 @@ if [ $nargs -eq 0 -o $doblat == T ]; then
     ${BIN}/blatRefresh 2>> ${LOGFILE} > ${WORKINGDIR}/blat.gff
     checkExit
 
+    logit "Splitting blat output..."
     ${SPLITCMD} -t "blat.chr%s.gff" < ${WORKINGDIR}/blat.gff
     checkExit
 

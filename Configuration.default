@@ -10,5 +10,11 @@ then
 fi
 . ${MGICONFIG}/master.config.sh
 
+DATADIR=${DATALOADSOUTPUT}/mgi/mgigff3/downloads
+export DATADIR
+
+WORKINGDIR=${DATALOADSOUTPUT}/mgi/mgigff3/work
+export WORKINGDIR
+
 DISTRIBDIR=${FTPROOT}/pub/mgigff3
 export DISTRIBDIR

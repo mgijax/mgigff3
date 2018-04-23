@@ -38,8 +38,12 @@ export CHRS=( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 X Y MT )
 
 # ---------------------
 export BIN=${DIR}/bin
-export DATADIR=${DIR}/data
-export WORKINGDIR=${DIR}/work
+if [ "${DATADIR}" == "" ]; then
+    export DATADIR=${DIR}/data
+fi
+if [ "${WORKINGDIR}" == "" ]; then
+    export WORKINGDIR=${DIR}/work
+fi
 if [ "${DISTRIBDIR}" == "" ]; then
     export DISTRIBDIR=${DIR}/dist
 fi
@@ -50,7 +54,7 @@ export ANNUALDIR=${ARCHIVEDIR}/annual
 # Age limit in days. Archived files older than this are culled to one per year.
 export ARCHIVEAGELIMIT=365
 
-export PYTHONPATH=${DIR}/lib:${PYTHONPATH:-.}
+export PYTHONPATH=${PYTHONPATH:-.}:${BIN}/lib:${BIN}/lib/intermine-1.09.09-py2.7.egg
 
 # ---------------------
 export SORTCMD="sort -k 1,1 -k 4n,4n -k 5nr,5nr"
