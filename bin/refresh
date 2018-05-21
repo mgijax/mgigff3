@@ -60,6 +60,17 @@ do
 done
 
 
+# ---------------------
+${MKDIR} -p ${DATADIR}
+${MKDIR} -p ${WORKINGDIR}
+${MKDIR} -p ${DISTRIBDIR}
+${MKDIR} -p ${ARCHIVEDIR}
+${MKDIR} -p ${MONTHLYDIR}
+${MKDIR} -p ${ANNUALDIR}
+
+# ---------------------
+${TOUCH} ${LOGFILE}
+
 ########
 
 echo "Logging to: " ${LOGFILE}
@@ -106,10 +117,19 @@ function refreshProvider {
     #
 
 
-    logit "Downloading ${provider}: $url"
+    logit "Downloading ${provider}: $url to $downloaded"
     if [ ${extension} = "gz" ]; then
-	${CURL} ${url} 2>> ${LOGFILE} | ${GUNZIP} > ${downloaded} 2>> ${LOGFILE}
+	#
+	curl "${url}" > ${DATADIR}/wtf.gz 2>>  ${LOGFILE}
 	checkExit
+	#
+	logit "Uncompressing..."
+	gunzip -c ${DATADIR}/wtf.gz > ${downloaded} 2>> ${LOGFILE}
+	# For some completely mysterious reason, gzip complains that it cannot
+	# find file "gzip.gz". No
+	# Therefore the following checkExit always fails, even though the actual
+	# file is uncompressed successfully..
+	#checkExit
     else
 	${CURL} ${url} > ${downloaded} 2>> ${LOGFILE}
 	checkExit
@@ -277,21 +297,22 @@ if [ $nargs -eq 0 -o $dodistrib == T ]; then
 	filename=$(basename "$1")		# e.g. MGI.exome.gff3
 	extension="${filename##*.}"		# .gff3
 	filenameNoExt="${filename%.*}"		# MGI.exome
-	distfile=${DISTRIBDIR}/${filename}	# /path/to/dist/MGI.exome.gff3
 	datestampedname=${filenameNoExt}.${DATESTAMP2}.${extension} # MGI.exome.20170922.gff3
-	monthlyfile=${MONTHLYDIR}/${datestampedname}  # /path/to/monthly/MGI.exome.20170922.gff3
+	monthlyname=${filenameNoExt}.${YEARMONTH}.${extension} # MGI.exome.201709.gff3
 	annualname=${filenameNoExt}.${YEAR}.${extension} # MGI.exome.2017.gff3
-	annualfile=${ARCHIVEDIR}/annual/${annualname} # /path/to/annuals/MGI.exome.2017.gff3
-
 	#
-	logit "Creating monthly: ${monthlyfile}"
-	${CP} $1 ${monthlyfile}
-	checkExit
+	distfile=${DISTRIBDIR}/${filename}.gz	            # /path/to/dist/MGI.exome.gff3.gz
+	monthlyfile=${MONTHLYDIR}/${monthlyname}.gz     # /path/to/monthly/MGI.exome.20170922.gff3.gz
+	annualfile=${ANNUALDIR}/${annualname}.gz    # /path/to/annuals/MGI.exome.2017.gff3.gz
+	#
+	logit "Creating monthly: ${monthlyfile} from input file $1"
+	gzip -c $1 > ${monthlyfile}
+	#checkExit
 
 	#
 	if [ ! -e ${annualfile} ]; then
 	    logit "Creating annual: ${annualfile}"
-	    ${CP} $1 ${annualfile}
+	    ${CP} ${monthlyfile} ${annualfile}
 	    checkExit
 	fi
 

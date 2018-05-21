@@ -8,6 +8,7 @@ export PYTHON24="python2.4"
 export CURL=curl
 export CP=cp
 export GUNZIP=gunzip
+export GZIP=gzip
 export GREP=grep
 export SORT=sort
 export MKDIR=mkdir
@@ -28,6 +29,7 @@ export FIND=find
 export DATESTAMP=`${DATE} +"%Y-%m-%d"`
 export DATESTAMP2=`${DATE} +"%Y%m%d.%H%M%S"`
 export YEAR=`${DATE} +"%Y"`
+export YEARMONTH=`${DATE} +"%Y%m"`
 
 # ---------------------
 export BLAT_HOST="bhmgiapp01.jax.org"
@@ -75,18 +77,7 @@ export ENSEMBLfile=Mus_musculus.GRCm38.${ENSEMBLver}.gff3
 export ENSEMBLurl=ftp://ftp.ensembl.org/pub/release-${ENSEMBLver}/gff3/mus_musculus/${ENSEMBLfile}.gz
 export ENSEMBLprep="${PYTHON} ${BIN}/ensemblPrep.py"
 #
-
-# ---------------------
-${MKDIR} -p ${DATADIR}
-${MKDIR} -p ${WORKINGDIR}
-${MKDIR} -p ${DISTRIBDIR}
-${MKDIR} -p ${ARCHIVEDIR}
-${MKDIR} -p ${MONTHLYDIR}
-${MKDIR} -p ${ANNUALDIR}
-
-# ---------------------
 export LOGFILE=${WORKINGDIR}/LOG.${DATESTAMP}
-${TOUCH} ${LOGFILE}
 
 # ---------------------
 # Echos its arguments to the log file. Prepends a datetime stamp.
