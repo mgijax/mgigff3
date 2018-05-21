@@ -3,7 +3,7 @@
 #
 # Generates a GFF3 file of genes and pseudogenes in MGI.
 # Only gene/pseudogene features; no subfeatures (obviously).
-# These genes/pseudogenes will for the roots of model hierarchies in the 
+# These genes/pseudogenes will form the roots of model hierarchies in the 
 # output. 
 # Each feature includes the MGI id, symbol, name, actual SO type (e.g., tRNA_gene) 
 # and genomic coordinates.
@@ -99,7 +99,8 @@ def main():
 		    "Name": f.symbol,
 		    "description": f.name,
 		    "Dbxref" : dbxrefs,
-		    "mgi_type" : f.mgiType
+		    "mgi_type" : f.mgiType,
+		    "strain_gene_id" : f.primaryIdentifier.replace("MGI:","MGI_C57BL6J_")
 
 		}
 	    ])
