@@ -32,18 +32,18 @@ class MgiComputedMerger:
     def loadSeqidFile(self):
 	fd = open(self.mgiFile, 'r')
 	for line in fd:
-	    seqid, mgiid, symbol, name, mcv_type, so_type = line.strip().split("\t")
+	    seqid, mgiid, symbol, name, mgi_type, so_type = line.strip().split("\t")
 	    self.seqid2gene[seqid] = mgiid
 	    feat = self.mgi2feats.get(mgiid, None)
 	    if feat is None:
 		feat = gff3.Feature()
-		feat.ID = mgiid
+		feat.ID = mgiid.replace('MGI:', 'MGI_C57BL6J_')
 		feat.source = "MGI"
 		feat.type = "gene"	# FIXME
 		feat.curie = mgiid
 		feat.Name = symbol
 		feat.description = name
-		feat.mcv_type = mcv_type
+		feat.mgi_type = mgi_type
 		feat.so_term_name = so_type
 		self.mgi2feats[mgiid] = [ feat ]
 
@@ -69,7 +69,7 @@ class MgiComputedMerger:
 		ff.mgi_id = mgiid
 
 	    # Attach the match feature to the gene
-	    f.Parent = [ mgiid ]
+	    f.Parent = [ mf.ID ]
 
 	    # If first match for the gene, set its chromosome, strand, start, end
 	    if mf.seqid == ".":
@@ -109,7 +109,6 @@ class MgiComputedMerger:
 	    return c
 	self.loadSeqidFile()
 	self.loadPslFile()
-	maker = gff3.IdMaker()
 	allFeats = self.mgi2feats.values()
 	allFeats.sort(byTopLevel)
 	for feats in allFeats:
@@ -120,7 +119,6 @@ class MgiComputedMerger:
 	    model = [mf]
 	    for m in matches:
 	        model += gff3.flattenModel(m)
-	    gff3.reassignIDs(model, maker)
 	    for f in model:
 	        sys.stdout.write(str(f))
 

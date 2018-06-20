@@ -86,29 +86,29 @@ class ModelMerger:
 	return
     #
     def reassignIDs(self, m):
-	idMap = {}
-	idCounts = {}
+	self.idMap = {}
+	self.idCounts = {}
 	feats = gff3.flattenModel(m)
         for f in feats:
 	    # handle CDSs, where multiple features have same ID.
-	    if f.attributes.get("ID", None) in idMap:
-	        f.ID = idMap[f.ID]
+	    if f.attributes.get("ID", None) in self.idMap:
+	        f.ID = self.idMap[f.ID]
 		continue
 	    # generate ID
 	    tp = f.type
 	    tp = tp.replace("pseudogenic_","")
 	    if tp.endswith("RNA") or "transcript" in tp:
 	        tp = "transcript"
-	    tp = tp[0].lower()
-	    count = idCounts[tp] = idCounts.setdefault(tp, 0) + 1
-	    newid = m.curie if f is m else "%s.%s%d" % (m.curie,tp,count)
-	    # update f, idMap
-	    if "ID" in f.attributes: idMap[f.ID] = newid
+	    tp = tp.lower()
+	    count = self.idCounts[tp] = self.idCounts.setdefault(tp, 0) + 1
+	    newid = m.ID if f is m else "%s_%s_%d" % (m.ID.replace(":","_"),tp,count)
+	    # update f, self.idMap
+	    if 'ID' in f.attributes: self.idMap[f.ID] = newid
 	    f.ID = newid
 	# change Parent refs accordingly
 	for f in feats:
 	    if "Parent" in f.attributes:
-	        f.Parent = [ idMap[pid] for pid in f.Parent ]
+	        f.Parent = [ self.idMap[pid] for pid in f.Parent ]
 
     # Flushes the current pending queues (pendingMgi and pendingNonMgi)
     # based on the latest feature from the merged stream.
