@@ -22,6 +22,15 @@ from intermine.webservice import Service
 #
 TAB	= "\t"
 #
+# Quick fix for some missing SO term names in MouseMine. Should become unnecessary after
+# the next MM release.
+#
+HACKY_PATCH = {
+    'SO:0002184' : 'sense_intronic_ncRNA_gene',
+    'SO:0002185' : 'bidirectional_promoter_lncRNA',
+    'SO:0002132' : 'sense_overlap_ncRNA',
+}
+#
 pnameMap = {	# map from provider name to prefixes.
     "NCBI Gene Model" : "NCBI_Gene",
     "Ensembl Gene Model" : "ENSEMBL",
@@ -37,6 +46,7 @@ def getFeatures():
 	"symbol", 
 	"name", 
 	"sequenceOntologyTerm.name",
+	"sequenceOntologyTerm.identifier",
 	"mgiType", 
 	"chromosomeLocation.locatedOn.primaryIdentifier",
 	"chromosomeLocation.start",
@@ -57,6 +67,10 @@ def getFeatures():
     return query
 
 #
+def log(msg):
+    sys.stderr.write(msg+'\n')
+
+#
 def main():
     # FIXME: due to a bug in the Intermine client lib, the sort orders in the query are being ignored.
     # This forces us to accumulate results and sort internally before outputting anything.
@@ -66,8 +80,12 @@ def main():
     for f in getFeatures():
 	soterm = f.sequenceOntologyTerm.name
 	if not soterm:
-	    continue
+	    soterm = HACKY_PATCH.get(f.sequenceOntologyTerm.identifier, None)
+	    if not soterm:
+	        log('No SO term. Skipping feature: ' + str(f))
+		continue
 	if not ("gene" in soterm or "pseudo" in soterm or "lnc_RNA" in soterm or "lncRNA" in soterm):
+	    log('Excluded SO term Skipping feature: ' + str(f))
 	    continue
 	col3 = "pseudogene" if "pseudo" in soterm else "gene"
 	s = f.chromosomeLocation.strand
@@ -77,6 +95,8 @@ def main():
 	soterm = f.sequenceOntologyTerm.name
 	if soterm in ["lncRNA","lnc_RNA"]:
 	    soterm = "lncRNA_gene"
+	elif soterm == "ribozyme":
+	    soterm = "ribozyme_gene"
 	elif soterm == "antisense_lncRNA":
 	    # SO has no term for "antisense lncRNA gene"
 	    soterm = "lncRNA_gene"
@@ -92,15 +112,14 @@ def main():
 		strand,
 		".",
 		{
-		    "ID": f.primaryIdentifier,
+		    "ID": f.primaryIdentifier.replace("MGI:","MGI_C57BL6J_"),
 		    "curie":  f.primaryIdentifier,
 		    "gene_id": f.primaryIdentifier,
 		    "so_term_name" : soterm,
 		    "Name": f.symbol,
 		    "description": f.name,
 		    "Dbxref" : dbxrefs,
-		    "mgi_type" : f.mgiType,
-		    "strain_gene_id" : f.primaryIdentifier.replace("MGI:","MGI_C57BL6J_")
+		    "mgi_type" : f.mgiType
 
 		}
 	    ])
