@@ -85,14 +85,13 @@ def main():
 	        log('No SO term. Skipping feature: ' + str(f))
 		continue
 	if not ("gene" in soterm or "pseudo" in soterm or "lnc_RNA" in soterm or "lncRNA" in soterm):
-	    log('Excluded SO term Skipping feature: ' + str(f))
+	    #log('Excluded SO term Skipping feature: ' + str(f))
 	    continue
 	col3 = "pseudogene" if "pseudo" in soterm else "gene"
 	s = f.chromosomeLocation.strand
 	strand = "+" if s == "+1" else "-" if s == "-1" else "."
 	dbxrefs = [ pnameMap[xr.source.name] + ":" + xr.identifier for xr in f.crossReferences ]
 	#
-	soterm = f.sequenceOntologyTerm.name
 	if soterm in ["lncRNA","lnc_RNA"]:
 	    soterm = "lncRNA_gene"
 	elif soterm == "ribozyme":
