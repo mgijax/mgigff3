@@ -84,6 +84,7 @@ fi
 ${TOUCH} ${LOGFILE}
 
 # ---------------------
+${MKDIR} -p ${DATADIR}
 ${MKDIR} -p ${WORKINGDIR}
 ${MKDIR} -p ${DISTRIBDIR}
 ${MKDIR} -p ${ARCHIVEDIR}
