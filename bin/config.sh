@@ -72,7 +72,7 @@ export MIRfile=mmu.gff3
 export MIRurl=ftp://mirbase.org/pub/mirbase/CURRENT/genomes/${MIRfile}
 export MIRprep="${PYTHON} ${BIN}/mirbasePrep.py"
 #
-export ENSEMBLver=90
+export ENSEMBLver=92
 export ENSEMBLfile=Mus_musculus.GRCm38.${ENSEMBLver}.gff3
 export ENSEMBLurl=ftp://ftp.ensembl.org/pub/release-${ENSEMBLver}/gff3/mus_musculus/${ENSEMBLfile}.gz
 export ENSEMBLprep="${PYTHON} ${BIN}/ensemblPrep.py"

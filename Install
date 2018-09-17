@@ -13,8 +13,12 @@ cd `dirname $0`
 
 if [ ! -r Configuration ]
 then
-    echo "Cannot read Configuration file." | tee -a ${LOG}
-    exit 1
+    if [ ! -r Configuration.default ]
+    then
+	echo "Cannot read Configuration file." | tee -a ${LOG}
+	exit 1
+    fi
+    cp Configuration.default Configuration
 fi
 
 chmod 755 ./bin/refresh
