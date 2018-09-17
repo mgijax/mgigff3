@@ -2,9 +2,7 @@
 
 # https://stackoverflow.com/questions/59895/getting-the-source-directory-of-a-bash-script-from-within
 export DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd ".." && pwd )"
-
 source ${DIR}/Configuration
-source ${DIR}/bin/config.sh
 
 nargs=$#
 
@@ -18,10 +16,20 @@ docat=F
 doexome=F
 dodistrib=F
 doagr=F
+donothing=F
 
 until [ -z "$1" ]  # Until all parameters used up . . .
 do
     case "$1" in
+    -c)
+	shift
+	echo "Sourcing config file:" $1
+	source $1
+	nargs=$((nargs-2))
+	;;
+    -n)
+        donothing=T
+	;;
     mgi)
 	domgi=T
         ;;
@@ -59,24 +67,36 @@ do
     shift
 done
 
+source ${DIR}/bin/config.sh
+
+echo "Data directory:" $DATADIR
+echo "Work directory:" $WORKINGDIR
+echo "Dist directory:" $DISTRIBDIR
+echo "Logging to: " ${LOGFILE}
+#
+
+if [ $donothing == T ]; then
+    echo "Doing nothing."
+    exit 0
+fi
 
 # ---------------------
-${MKDIR} -p ${DATADIR}
+${TOUCH} ${LOGFILE}
+
+# ---------------------
 ${MKDIR} -p ${WORKINGDIR}
 ${MKDIR} -p ${DISTRIBDIR}
 ${MKDIR} -p ${ARCHIVEDIR}
 ${MKDIR} -p ${MONTHLYDIR}
 ${MKDIR} -p ${ANNUALDIR}
 
-# ---------------------
-${TOUCH} ${LOGFILE}
-
 ########
-
-echo "Logging to: " ${LOGFILE}
-#
 logit "================================================================================="
-logit "Starting refresh..." 
+logit "This is the MGI GFF3 pipeline."
+logit "Starting refresh." 
+logit "Data directory:" $DATADIR
+logit "Work directory:" $WORKINGDIR
+logit "Dist directory:" $DISTRIBDIR
 
 #######
 
