@@ -58,7 +58,7 @@ class MgiComputedMerger:
 	    mf = mfeats[0]			# the top-level mgi feature
 	    #
 	    if f.strand != mf.strand and mf.strand != ".":
-	        self.log("REJECTING SEQUENCE - Seqid (%s) for gene (%s) matches on wrong stand\n"%(seqid,mgiid))
+	        self.log("REJECTING SEQUENCE - Seqid (%s) for gene (%s) matches on wrong strand\n"%(seqid,mgiid))
 		continue
 	    #
 	    # All the features in the model need tweaking:

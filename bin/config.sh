@@ -34,6 +34,9 @@ export YEARMONTH=`${DATE} +"%Y%m"`
 # ---------------------
 export BLAT_HOST="bhmgiapp01.jax.org"
 export BLAT_PORT="9038"
+export BLAT_ARGS="-nohead -minIdentity=98"
+#
+export PSLREPS_ARGS="-singleHit -nohead "
 #
 # The chromosomes and their order.
 export CHRS=( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 X Y MT )
@@ -72,8 +75,9 @@ export MIRfile=mmu.gff3
 export MIRurl=ftp://mirbase.org/pub/mirbase/CURRENT/genomes/${MIRfile}
 export MIRprep="${PYTHON} ${BIN}/mirbasePrep.py"
 #
-export ENSEMBLver=92
-export ENSEMBLfile=Mus_musculus.GRCm38.${ENSEMBLver}.gff3
+export ENSEMBLver=93
+export ENSEMBLbuild=GRCm38
+export ENSEMBLfile=Mus_musculus.${ENSEMBLbuild}.${ENSEMBLver}.gff3
 export ENSEMBLurl=ftp://ftp.ensembl.org/pub/release-${ENSEMBLver}/gff3/mus_musculus/${ENSEMBLfile}.gz
 export ENSEMBLprep="${PYTHON} ${BIN}/ensemblPrep.py"
 #

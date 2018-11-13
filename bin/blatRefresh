@@ -35,12 +35,12 @@ checkExit
 
 # 2b. Blat the sequences against the mouse genome assembly
 logit "Blat models: Blat'ing the sequences..."
-${GFCLIENT} -nohead -minIdentity=95 ${BLAT_HOST} ${BLAT_PORT} / ${WORKINGDIR}/blat.seqs.fa ${WORKINGDIR}/blat.gfclient.psl >> ${LOGFILE} 2>&1
+${GFCLIENT} ${BLAT_ARGS} ${BLAT_HOST} ${BLAT_PORT} / ${WORKINGDIR}/blat.seqs.fa ${WORKINGDIR}/blat.gfclient.psl >> ${LOGFILE} 2>&1
 checkExit
 
 # 3a. Use pslreps to filter the results to single best hits
 logit "Blat models: Filtering blat hits with pslreps..."
-${PSLREPS} -singleHit -nohead ${WORKINGDIR}/blat.gfclient.psl ${WORKINGDIR}/blat.pslreps.psl ${WORKINGDIR}/blat.pslreps.psr >> ${LOGFILE} 2>&1
+${PSLREPS} ${PSLREPS_ARGS} ${WORKINGDIR}/blat.gfclient.psl ${WORKINGDIR}/blat.pslreps.psl ${WORKINGDIR}/blat.pslreps.psr >> ${LOGFILE} 2>&1
 checkExit
 
 # 3b. Convert the alignments to GFF3 hierarchies and attach the corresponding MGI id
