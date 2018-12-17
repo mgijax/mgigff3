@@ -2,6 +2,7 @@
 # prepMgi.py
 #
 # Generates a GFF3 file of genes and pseudogenes in MGI.
+# Writes to stdout.
 # Only gene/pseudogene features; no subfeatures (obviously).
 # These genes/pseudogenes will form the roots of model hierarchies in the 
 # output. 
@@ -10,126 +11,149 @@
 # Each feature also includes Dbxrefs to their various gene models.
 # These Dbxrefs will direct the merging of models downstream.
 #
-# IMPLEMENTATION: Uses MouseMine web services. Retrieves all SequenceFeatures 
-# in the Mouse Genome Catalog (along with any model IDs)
-# Filters for genes and pseudogenes.
-# Writes GFF3 file.
-#
 
-import gff3
 import sys
-from intermine.webservice import Service
-#
-TAB	= "\t"
-#
-# Quick fix for some missing SO term names in MouseMine. Should become unnecessary after
-# the next MM release.
-#
-HACKY_PATCH = {
-    'SO:0002184' : 'sense_intronic_ncRNA_gene',
-    'SO:0002185' : 'bidirectional_promoter_lncRNA',
-    'SO:0002132' : 'sense_overlap_ncRNA',
+import mgiadhoc as db
+
+geneModelLdbKeys = '59,60,83' # Ensembl gene model, NCBI gene model, miRBase
+ldbkey2prefix = {
+  59: 'NCBI_Gene',
+  60: 'ENSEMBL',
+  83: 'miRBase'
 }
-#
-pnameMap = {	# map from provider name to prefixes.
-    "NCBI Gene Model" : "NCBI_Gene",
-    "Ensembl Gene Model" : "ENSEMBL",
-    "miRBase" : "miRBase",
-    }
 
-def getFeatures():
-    service = Service("http://www.mousemine.org/mousemine/service")
-    #
-    query = service.new_query("SequenceFeature")
-    query.add_view(
-	"primaryIdentifier", 
-	"symbol", 
-	"name", 
-	"sequenceOntologyTerm.name",
-	"sequenceOntologyTerm.identifier",
-	"mgiType", 
-	"chromosomeLocation.locatedOn.primaryIdentifier",
-	"chromosomeLocation.start",
-	"chromosomeLocation.end",
-	"chromosomeLocation.strand",
-	"crossReferences.identifier", 
-	"crossReferences.source.name"
-    )
-    query.add_sort_order("SequenceFeature.chromosomeLocation.locatedOn.primaryIdentifier", "ASC")
-    query.add_sort_order("SequenceFeature.chromosomeLocation.start", "ASC")
-    #
-    query.add_constraint("organism.taxonId", "=", "10090", code = "B")
-    query.add_constraint("dataSets.name", "=", "Mouse Gene Catalog from MGI", code = "C")
-    query.add_constraint("crossReferences.source.name", "ONE OF", 
-         ["Ensembl Gene Model", "NCBI Gene Model", "miRBase"], code = "D")
-    query.outerjoin("crossReferences")
-    #
-    return query
+mgiGenes = '''
+  select 
+    aa.accid, 
+    mm.symbol,
+    mm.name,
+    mt.name as markertype,
+    mmc.term as mcvtype,
+    mlc.chromosome,
+    mlc.startcoordinate,
+    mlc.endcoordinate,
+    mlc.strand
+  from
+    mrk_marker mm,
+    acc_accession aa,
+    mrk_location_cache mlc,
+    mrk_mcv_cache mmc,
+    mrk_types mt
+  where mm._marker_key = aa._object_key
+    and aa._logicaldb_key = 1
+    and aa._mgitype_key = 2
+    and aa.private = 0
+    and aa.preferred = 1
+    and mm._marker_key = mmc._marker_key
+    and mmc.qualifier = 'D'
+    and mm._marker_key = mlc._marker_key
+    and mm._marker_type_key = mt._marker_type_key
+    and mt.name in ('Gene','Pseudogene')
+  order by mlc.chromosome, mlc.startcoordinate
+'''
 
-#
-def log(msg):
-    sys.stderr.write(msg+'\n')
+# returns MGI id / provider model id pairs
+mgiModelIds = '''
+  select 
+    aa.accid as mgiid,
+    aa2.accid as modelid,
+    aa2._logicaldb_key
+  from
+    acc_accession aa,
+    acc_accession aa2
+  where aa._logicaldb_key = 1
+    and aa._mgitype_key = 2
+    and aa.private = 0
+    and aa.preferred = 1
+    and aa._object_key = aa2._object_key
+    and aa2._logicaldb_key in (%s)
+    and aa2._mgitype_key = 2
+    and aa2.preferred = 1
+''' % geneModelLdbKeys
 
-#
-def main():
-    # FIXME: due to a bug in the Intermine client lib, the sort orders in the query are being ignored.
-    # This forces us to accumulate results and sort internally before outputting anything.
-    # Once the intermine bug is fixed, we should be able to output features in the order returned 
-    # by the query.
-    feats = []
-    for f in getFeatures():
-	soterm = f.sequenceOntologyTerm.name
-	if not soterm:
-	    soterm = HACKY_PATCH.get(f.sequenceOntologyTerm.identifier, None)
-	    if not soterm:
-	        log('No SO term. Skipping feature: ' + str(f))
-		continue
-	if not ("gene" in soterm or "pseudo" in soterm or "lnc_RNA" in soterm or "lncRNA" in soterm):
-	    #log('Excluded SO term Skipping feature: ' + str(f))
-	    continue
-	col3 = "pseudogene" if "pseudo" in soterm else "gene"
-	s = f.chromosomeLocation.strand
-	strand = "+" if s == "+1" else "-" if s == "-1" else "."
-	dbxrefs = [ pnameMap[xr.source.name] + ":" + xr.identifier for xr in f.crossReferences ]
-	#
-	if soterm in ["lncRNA","lnc_RNA"]:
-	    soterm = "lncRNA_gene"
-	elif soterm == "ribozyme":
-	    soterm = "ribozyme_gene"
-	elif soterm == "antisense_lncRNA":
-	    # SO has no term for "antisense lncRNA gene"
-	    soterm = "lncRNA_gene"
-	# filter out genes with no model IDs
-	if len(dbxrefs) > 0:
-	    g = gff3.Feature([
-		f.chromosomeLocation.locatedOn.primaryIdentifier,
-		"MGI",
-		col3,
-		str(f.chromosomeLocation.start),
-		str(f.chromosomeLocation.end),
-		".",
-		strand,
-		".",
-		{
-		    "ID": f.primaryIdentifier.replace("MGI:","MGI_C57BL6J_"),
-		    "curie":  f.primaryIdentifier,
-		    "gene_id": f.primaryIdentifier,
-		    "so_term_name" : soterm,
-		    "Name": f.symbol,
-		    "description": f.name,
-		    "Dbxref" : dbxrefs,
-		    "mgi_type" : f.mgiType
+mcv2soData = [
+    # ['MCV term', 'SO term', 'SO id']
+    ['antisense lncRNA gene', 'antisense_lncRNA_gene', 'SO:0002182'],
+    ['bidirectional promoter lncRNA gene', 'bidirectional_promoter_lncRNA', 'SO:0002185'],
+    ['gene segment', 'gene_segment', 'SO:3000000'],
+    ['lincRNA gene', 'lincRNA_gene', 'SO:0001641'],
+    ['lncRNA gene', 'lncRNA_gene', 'SO:0002127'],
+    ['miRNA gene', 'miRNA_gene', 'SO:0001265'],
+    ['non-coding RNA gene', 'ncRNA_gene', 'SO:0001263'],
+    ['polymorphic pseudogene', 'polymorphic_pseudogene', 'SO:0001841'],
+    ['protein coding gene', 'protein_coding_gene', 'SO:0001217'],
+    ['pseudogene', 'pseudogene', 'SO:0000336'],
+    ['pseudogenic gene segment', 'pseudogenic_gene_segment', 'SO:0001741'],
+    ['rRNA gene', 'rRNA_gene', 'SO:0001637'],
+    ['ribozyme gene', 'ribozyme_gene', 'SO:0002181'],
+    ['RNase MRP RNA gene', 'RNase_MRP_RNA_gene', 'SO:0001640'],
+    ['RNase P RNA gene', 'RNase_P_RNA_gene', 'SO:0001639'],
+    ['scRNA gene', 'scRNA_gene', 'SO:0001266'],
+    ['sense intronic lncRNA gene', 'sense_intronic_ncRNA_gene', 'SO:0002184'],
+    ['sense overlapping lncRNA gene', 'sense_overlap_ncRNA_gene', 'SO:0002183'],
+    ['snRNA gene', 'snRNA_gene', 'SO:0001268'],
+    ['snoRNA gene', 'snoRNA_gene', 'SO:0001267'],
+    ['SRP RNA gene', 'SRP_RNA_gene', 'SO:0001269'],
+    ['tRNA gene', 'tRNA_gene', 'SO:0001272'],
+    ['telomerase RNA gene', 'telomerase_RNA_gene', 'SO:0001643'],
+    ['unclassified gene', 'gene', 'SO:0000704'],
+    ['unclassified non-coding RNA gene', 'ncRNA_gene', 'SO:0001263'],
+]
+mcv2so = {}
+for r in mcv2soData:
+  mcv2so[r[0]] = r[1]
 
-		}
-	    ])
-	    feats.append(g)
-    # end for loop
+def main () :
+    # Read the MGI/model id pairs. Build index from MGI id -> list of model ids
+    ix = {}
+    for rec in db.sql(mgiModelIds):
+      xref = ldbkey2prefix[rec['_logicaldb_key']] + ':' + rec['modelid']
+      ix.setdefault(rec['mgiid'],[]).append(xref)
+    # Read all MGI genes and pseudogenes, and convert them to GFF3.
+    for rec in db.sql(mgiGenes):
+      mgiid = rec['accid']
+      if not mgiid in ix:
+	# only want things with model ids
+        continue
+      symbol = rec['symbol']
+      name = rec['name']
+      chr = rec['chromosome']
+      start = int(rec['startcoordinate'])
+      end = int(rec['endcoordinate'])
+      strand = rec['strand']
+      markertype = rec['markertype']
+      mcvtype = rec['mcvtype']
+      attrs = [
+	# mint a B6 strain-specific ID from the MGI ID
+	['ID', 'MGI_C57BL6J_' + mgiid[4:]],
+	# by convention, GFF3 Name attr is what a browser displays
+	['Name', symbol],
+	# also by convention, GFF3 description attr used for "long" names
+	['description', name.replace(';',',')],
+	# convention
+	['gene_id', mgiid],
+	# for the Alliance
+	['curie', mgiid],
+	# list the model ids
+	['Dbxref', ','.join(ix[mgiid])],
+	# what MGI calls it
+	['mgi_type', mcvtype],
+	# a bona fide SO term corresponding to mgi_type
+	['so_term_name', mcv2so[mcvtype]]
+      ]
+      gffrec = [
+	chr,
+	'MGI',
+	markertype.lower(),
+	str(start),
+	str(end),
+	'.',
+	strand,
+	'.',
+	''.join(map(lambda x: x[0]+'='+x[1]+';', attrs))
+      ]
+      print '\t'.join(gffrec)
 
-    feats.sort( lambda a,b: cmp((a.seqid,a.start), (b.seqid,b.start)) )
-    for f in feats:
-        sys.stdout.write(str(f))
-
+####
 #
 main()
-
-

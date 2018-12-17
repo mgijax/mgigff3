@@ -115,7 +115,7 @@ class ModelMerger:
     # Returns the flushed items from the pendingMgi queue, i.e., the root
     # features of the flushed models.
     #
-    # Flushing depends of the fact the file is (roughly) sorted by increasing
+    # Flushing depends on the fact the file is (roughly) sorted by increasing
     # start position of the features. As each feature f is read from the input,
     # the cache is scanned to see what can be flushed. For a given feature g in
     # the cache, if g.end < f.start, then g is not overlapped by f and cannot
