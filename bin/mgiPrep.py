@@ -121,6 +121,9 @@ def main () :
       start = int(rec['startcoordinate'])
       end = int(rec['endcoordinate'])
       strand = rec['strand']
+      if strand is None:
+	sys.stderr.write("null strand: " + str(rec) + "\n")
+	continue
       markertype = rec['markertype']
       mcvtype = rec['mcvtype']
       attrs = [
