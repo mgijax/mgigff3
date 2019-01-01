@@ -3,7 +3,7 @@
 # WARNING: some of the tests below include literal TAB characters.
 # Sometimes the TABs get converted to spaces, which messes up the tests. Something to watch out for,
 
-source config.sh
+source ${DIR}/bin/config.sh
 
 FILE=$1
 

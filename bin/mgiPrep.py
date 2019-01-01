@@ -71,6 +71,7 @@ mgiModelIds = '''
     and aa2.preferred = 1
 ''' % geneModelLdbKeys
 
+# This mapping should come out of the database. For now hardcode it. FIXME.
 mcv2soData = [
     # ['MCV term', 'SO term', 'SO id']
     ['antisense lncRNA gene', 'antisense_lncRNA_gene', 'SO:0002182'],
