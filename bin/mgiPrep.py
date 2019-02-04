@@ -76,6 +76,7 @@ mcv2soData = [
     # ['MCV term', 'SO term', 'SO id']
     ['antisense lncRNA gene', 'antisense_lncRNA_gene', 'SO:0002182'],
     ['bidirectional promoter lncRNA gene', 'bidirectional_promoter_lncRNA', 'SO:0002185'],
+    ['gene', 'gene', 'SO:0000704'],
     ['gene segment', 'gene_segment', 'SO:3000000'],
     ['lincRNA gene', 'lincRNA_gene', 'SO:0001641'],
     ['lncRNA gene', 'lncRNA_gene', 'SO:0002127'],
@@ -143,6 +144,7 @@ def main () :
 	# what MGI calls it
 	['mgi_type', mcvtype],
 	# a bona fide SO term corresponding to mgi_type
+	# Throw an error if there is no mapping for this MCV term.
 	['so_term_name', mcv2so[mcvtype]]
       ]
       gffrec = [
