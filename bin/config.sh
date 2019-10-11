@@ -67,7 +67,7 @@ export SPLITCMD="${PYTHON} ${BIN}/splitGff.py -d ${WORKINGDIR}"
 export COUNTCMD="${PYTHON} ${BIN}/profileGff.py"
 
 # ---------------------
-export NCBIfile=ref_GRCm38.p4_top_level.gff3
+export NCBIfile=ref_GRCm38.p6_top_level.gff3
 export NCBIurl=ftp://ftp.ncbi.nlm.nih.gov/genomes/Mus_musculus/GFF/${NCBIfile}.gz
 export NCBIprep="${PYTHON} ${BIN}/ncbiPrep.py"
 #
