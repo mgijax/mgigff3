@@ -31,6 +31,26 @@ EXCLUDE_TYPES = set([
   "region",
   "sequence_alteration",
   "sequence_feature",
+  "CAAT_signal",
+  "DNAseI_hypersensitive_site",
+  "TATA_box",
+  "TSS",
+  "biological_region",
+  "conserved_region",
+  "enhancer_blocking_element",
+  "imprinting_control_region",
+  "locus_control_region",
+  "matrix_attachment_site",
+  "mobile_genetic_element",
+  "nucleotide_motif",
+  "promoter",
+  "protein_binding_site",
+  "replication_regulatory_region",
+  "response_element",
+  "sequence_alteration",
+  "sequence_feature",
+  "silencer",
+  "transcriptional_cis_regulatory_region",
 ])
 
 class ConvertNCBI:
@@ -104,13 +124,18 @@ class ConvertNCBI:
 	if f[2] in EXCLUDE_TYPES:
 	  return None
 	#
+	xrs = f.attributes.get('Dbxref', [])
+	if type(xrs) is types.StringType:
+	    xrs = [xrs]
+
+	# skip miRNAs
+	if len(filter(lambda x: x.startswith("miRBase:"), xrs)):
+	  return None
+	#
 	f[0] = self.currentRegion
 	f[1] = "NCBI"
 	if "Parent" not in f.attributes:
 	    # set the curie for top level nodes
-	    xrs = f.attributes.get('Dbxref', [])
-	    if type(xrs) is types.StringType:
-		xrs = [xrs]
 	    xrs = filter(lambda x: x.startswith("GeneID:"), xrs)
 	    if len(xrs) == 1:
 		f.attributes["curie"] = xrs[0].replace("GeneID:","NCBI_Gene:")

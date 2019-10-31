@@ -62,7 +62,7 @@ try \
     "Number of features in Bmp4 model" \
     `grep MGI:88180 ${FILE} | wc -l` \
     -gt \
-    30
+    25
 
 ###
 #
