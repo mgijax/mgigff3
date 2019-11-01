@@ -22,6 +22,10 @@ import optparse
 
 TAB	= '\t'
 HASH	= '#'
+
+# Column 3 types to filter out.
+# May need to update this set when there is a new NCBI data release.
+#
 EXCLUDE_TYPES = set([
   "D_loop",
   "cDNA_match",
