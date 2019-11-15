@@ -68,6 +68,12 @@ class ModelMerger:
     # Merging a gene with a pseudogene causes the addition of a biotypeConflict attribute.
     #
     def mergeModels(self, m, f):
+	if (m.strand == '.') :
+	  self.log("Assigning strand to MGI feature from model: %s %s(%s)\n" % (m.ID, f.ID, f.strand))
+	  m.strand = f.strand
+	elif (m.strand != f.strand) :
+	  self.log("Cannot merge models because strands do not match: %s(%s) %s(%s)\n" % (m.ID, m.strand, f.ID, f.strand))
+	  return
 	m.start = min(m.start, f.start)
 	m.end   = max(m.end,   f.end)
 	feats = gff3.copyModel(gff3.flattenModel(f))
