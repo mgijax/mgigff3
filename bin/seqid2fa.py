@@ -64,7 +64,8 @@ def openSequenceFetch(ids, tool, email, db='nucleotide', retmode='text', rettype
 	    break
 	else:
 	    # if we exhaust the loop, there was an error
-	    raise RuntimeError("Error from eutils.")
+	    sys.stderr.write("Failed to get data from eUtils after %d tries.\n" % NTRIES)
+	    sys.exit(1)
 
 def fetchSequences(
 	infile,
