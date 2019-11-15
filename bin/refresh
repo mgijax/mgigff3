@@ -92,6 +92,9 @@ ${MKDIR} -p ${MONTHLYDIR}
 ${MKDIR} -p ${ANNUALDIR}
 
 ########
+# truncate log file
+> ${LOGFILE}
+#
 logit "================================================================================="
 logit "This is the MGI GFF3 pipeline."
 logit "Starting refresh." 
@@ -229,7 +232,7 @@ if [ $nargs -eq 0 -o $doblat == T ]; then
     logit "Generating blat models..."
     ${BIN}/blatRefresh 2>> ${LOGFILE} > ${WORKINGDIR}/blat.gff
     checkExit
-
+    
     logit "Splitting blat output..."
     ${SPLITCMD} -t "blat.chr%s.gff" < ${WORKINGDIR}/blat.gff
     checkExit
