@@ -82,7 +82,7 @@ export ENSEMBLfile=Mus_musculus.${ENSEMBLbuild}.${ENSEMBLver}.gff3
 export ENSEMBLurl=ftp://ftp.ensembl.org/pub/release-${ENSEMBLver}/gff3/mus_musculus/${ENSEMBLfile}.gz
 export ENSEMBLprep="${PYTHON} ${BIN}/ensemblPrep.py"
 #
-export LOGFILE=${WORKINGDIR}/LOG.${DATESTAMP}
+export LOGFILE=${WORKINGDIR}/refresh.log
 
 # ---------------------
 # Echos its arguments to the log file. Prepends a datetime stamp.
