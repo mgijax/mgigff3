@@ -148,11 +148,11 @@ function refreshProvider {
 	checkExit
 	#
 	logit "Uncompressing..."
-	gunzip -c ${DATADIR}/wtf.gz > ${downloaded} 2>> ${LOGFILE}
 	# For some completely mysterious reason, gzip complains that it cannot
-	# find file "gzip.gz". No
-	# Therefore the following checkExit always fails, even though the actual
-	# file is uncompressed successfully..
+	# find file "gzip.gz". No idea where this name is coming from, and the
+	# actual decompress happens just fine.
+	# Therefore we will redirect the error to /dev/null and skip the checkExit step.
+	gunzip -c "${DATADIR}/wtf.gz" > "${downloaded}" 2> /dev/null
 	#checkExit
     else
 	${CURL} ${url} > ${downloaded} 2>> ${LOGFILE}
