@@ -132,9 +132,6 @@ class ConvertNCBI:
 	if type(xrs) is types.StringType:
 	    xrs = [xrs]
 
-	# skip miRNAs
-	if len(filter(lambda x: x.startswith("miRBase:"), xrs)):
-	  return None
 	#
 	f[0] = self.currentRegion
 	f[1] = "NCBI"
@@ -212,7 +209,11 @@ class ConvertNCBI:
     def checkTranscriptNames(self, m):
         for f in gff3.flattenModel(m):
 	    if len(f.parents) and len(f.children) and "Name" not in f.attributes:
-		f.Name = list(f.parents)[0].curie + "_" + f.type
+                try:
+                    f.Name = list(f.parents)[0].curie + "_" + f.type
+                except:
+                    self.log("Exception on record: " + str(f))
+                    raise
 
     def main(self):
 	for m in gff3.models(self.pre(sys.stdin)):
