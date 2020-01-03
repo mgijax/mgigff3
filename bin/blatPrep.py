@@ -1,16 +1,23 @@
 #
 # prepMgiComputed.py
 #
-# Outputs a 6-column file:
-#	seqid  mgiid  symbol  name  mcvtype  sotype
-# for genes that do not have associated gene models
-# For each such gene, outputs one row for each sequence associated
-# with the gene that also satisfies:
+# Outputs sequence IDs for genes that do not have associated gene models.
+#
+# Sequences for a gene must satisfy:
 # - from Genbank/EMBL/DDBJ or RefSeq only
 # - only DNA and RNA (no protein)
 # - if DNA, must be < 10 kb in length
 # - must be associated with only one gene.
 # 
+# Outputs a 7-column file:
+#       seqid   ID of the sequence
+#       seqtype The type of the sequence. Either "DNA" or "RNA"
+#       division The genbank division for the sequence
+#       mgiid   MGI id of the associated gene
+#       symbol  The gene's symbol
+#       name    The gene's name
+#       mcvtype The gene's MCV type
+#       sotype  The gene's SO type
 
 import mgiadhoc as db
 
@@ -44,7 +51,7 @@ seqsWithOneGene = '''
   '''
 
 gwomSequences = '''
-  SELECT distinct c.accid as sequenceid, a.accid as markerid, m.symbol, m.name, v.term as mcv_type, st.term as seq_type
+  SELECT distinct c.accid as sequenceid, st.term as seq_type, s.division, a.accid as markerid, m.symbol, m.name, v.term as mcv_type
   FROM SEQ_Marker_Cache c, SEQ_Sequence s, ACC_Accession a, MRK_Marker m, MRK_MCV_Cache v, VOC_Term st
   WHERE c._sequence_key = s._sequence_key
   AND c._LogicalDB_key in (9,27)
@@ -80,14 +87,16 @@ typemap = {
 }
 
 for r in db.sql(gwomSequences):
-    mcvt = r["mcv_type"]
+    mcvtype = r["mcv_type"]
+    sotype  = typemap.get(mcvtype, mcvtype)
     line = [
       r["sequenceid"],
+      r["seq_type"],
+      r["division"],
       r["markerid"],
       r["symbol"],
       r["name"],
-      mcvt,
-      typemap.get(mcvt, mcvt),
-      r["seq_type"]
+      mcvtype,
+      sotype,
     ]
     print "\t".join(line)

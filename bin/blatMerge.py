@@ -21,6 +21,7 @@ class MgiComputedMerger:
 	self.mgiFile = sys.argv[2]
 	self.seqid2gene = {}
 	self.seqid2type = {}
+	self.seqid2div = {}
 	self.mgi2feats = {}
 
     def log(self, m):
@@ -33,9 +34,10 @@ class MgiComputedMerger:
     def loadSeqidFile(self):
 	fd = open(self.mgiFile, 'r')
 	for line in fd:
-	    seqid, mgiid, symbol, name, mgi_type, so_type, seq_type = line.strip().split("\t")
+	    seqid, seq_type, division, mgiid, symbol, name, mgi_type, so_type = line.strip().split("\t")
 	    self.seqid2gene[seqid] = mgiid
 	    self.seqid2type[seqid] = seq_type
+	    self.seqid2div[seqid] = division
 	    feat = self.mgi2feats.get(mgiid, None)
 	    if feat is None:
 		feat = gff3.Feature()
@@ -64,10 +66,10 @@ class MgiComputedMerger:
     def qNameNoVersion (self, f) :
         return f.qName.split(".")[0] 
 
-    def logRejects (self, msg, rejects = None) :
+    def logRejects (self, msg, rejects = None, sep='\n') :
         self.log(msg)
         if rejects and len(rejects) > 0:
-            self.log(''.join([str(s) for s in rejects]))
+            self.log(sep.join([str(s) for s in rejects]))
         self.log('\n')
         
     def processAlignments (self) :    
@@ -78,10 +80,10 @@ class MgiComputedMerger:
             singles = filter(lambda m: self.counts[self.qNameNoVersion(m)] == 1, mfeats[1:])
             multiples = filter(lambda m: self.counts[self.qNameNoVersion(m)] > 1, mfeats[1:])
             if len(multiples) :
-                self.logRejects("REJECTING SEQUENCES due to multiple matches\n", multiples)
+                self.logRejects("REJECTING SEQUENCES for GENE (%s) - multiple matches per sequence: %s" % (mgiid, set([ m.qName for m in multiples ])))
             # if no single matches, reject the gene
             if len(singles) == 0:
-                self.logRejects("REJECTING GENE - Gene(%s) - No unique matches.\n" % mgiid)
+                self.logRejects("REJECTING GENE (%s) - No unique matches." % mgiid)
                 mf._rejected = True
                 continue
             # tweak the models
@@ -96,40 +98,65 @@ class MgiComputedMerger:
             # if singles do not all agree on chromosome, reject the lot
             chroms = set([ s.seqid for s in singles ])
             if len(chroms) > 1:
-                self.logRejects("REJECTING GENE - Gene(%s) - Sequences match to multiple chromosomes\n" % mgiid, singles)
+                self.logRejects("REJECTING GENE (%s) - Sequences match to multiple chromosomes: %s " % (mgiid, set([ m.qName for m in singles ])))
                 mf._rejected = True
                 continue
-            # Divide into DNA and RNA matches
-            rnaSingles = filter(lambda s: self.seqid2type[self.qNameNoVersion(s)] == "RNA", singles)
-            dnaSingles = filter(lambda s: self.seqid2type[self.qNameNoVersion(s)] == "DNA", singles)
-            # If gene has only DNA matches, then
-            #   - all matches must be on same strand, else no model for gene
-            #   - gene's strand inferred
-            # Otherwise (gene has RNA matches)
-            #   - all RNA matches must be on same strand, else no model
-            #   - DNA matches on same strand are used. Those on other strand are kicked out/reported
-            checkStrands = dnaSingles if len(rnaSingles) == 0 else rnaSingles
-            strands = set([ s.strand for s in checkStrands ])
-            if len(strands) > 1 :
-                self.logRejects("REJECTING GENE - Gene(%s) - sequences match to both strands\n" % mgiid, checkStrands)
-                mf._rejected = True
-                continue
+            # Divide into DNA and RNA and EST matches
+            rnaSingles = []
+            estSingles = []
+            dnaSingles = []
+            for s in singles:
+              seqid = self.qNameNoVersion(s)
+              tp = self.seqid2type[seqid]
+              dv = self.seqid2div[seqid]
+              if tp == "RNA" and dv == "EST":
+                estSingles.append(s)
+              elif tp == "RNA" and dv != "EST":
+                rnaSingles.append(s)
+              else:
+                dnaSingles.append(s)
+              
+            # If gene has RNA matches:
+            #   - ignore DNA and EST matches
+            #     - the MGI gff gene model constructed only from RNA match results
+            #   - all RNA matches must be to same strand (else reject the lot)
+            #   - gene's strand inferred from RNA matches
+            # Else if gene has EST matches:
+            #   - ignore DNA matches
+            #     - the MGI gff gene model constructed only from EST match results.
+            #   - EST match strand is considered unreliable
+            #   - do not infer gene's strand - all strands should be set to "."
+            # Else (gene has only DNA matches):
+            #   - match strand is considered meaningless
+            #   - do not infer strand for gene - all strands should be set to "."
+
+            if len(rnaSingles) > 0 :
+                strands = set([ s.strand for s in rnaSingles ])
+                if len(strands) > 1 :
+                    self.logRejects("REJECTING GENE (%s) - RNA sequences match to both strands: %s" % (mgiid, set([r.qName for r in rnaSingles])))
+                    mf._rejected = True
+                    continue
+                mf.strand = list(strands)[0]
+                mfeats[1:] = rnaSingles
+            elif len(estSingles) > 0 :
+                self.log("GENE (%s) - only has EST %s matches. Setting strand to '.'\n" % (mgiid, "and DNA" if len(dnaSingles) else ''))
+                mf.strand = "."
+                for ff in estSingles:
+                  for fff in gff3.flattenModel(ff):
+                      fff.strand = "."
+                mfeats[1:] = estSingles
+            else:
+                self.log("GENE (%s) - only has DNA matches. Setting strand to '.'\n" % mgiid)
+                mf.strand = "."
+                for ff in dnaSingles:
+                  for fff in gff3.flattenModel(ff):
+                      fff.strand = "."
+                mfeats[1:] = dnaSingles
+
             # Update the gene-level feature
             mf.seqid = list(chroms)[0]
-            mf.strand = list(strands)[0]
-
-            if len(rnaSingles) == 0 :
-              mfeats2 = dnaSingles
-            else:
-              mfeats2 = rnaSingles + filter(lambda s: s.strand == mf.strand, dnaSingles)
-              rejects = filter(lambda s: s.strand != mf.strand, dnaSingles)
-              if len(rejects) > 0 : 
-                  self.logRejects("REJECTING DNA SEQUENCES for Gene(%s) - matching wrong strand.\n" % mgiid, rejects)
-            
-            mf.start = min([ s.start for s in mfeats2 ])
-            mf.end = max([ s.end for s in mfeats2 ])
-            #
-            mfeats[1:] = mfeats2
+            mf.start = min([ s.start for s in mfeats[1:] ])
+            mf.end = max([ s.end for s in mfeats[1:] ])
 
     def output (self) :
 	def byTopLevel(a, b):
