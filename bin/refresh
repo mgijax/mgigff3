@@ -192,6 +192,9 @@ if [ $nargs -eq 0 -o $domgi == T ]; then
     checkExit
     ${SPLITCMD} -t "mgi.chr%s.gff" < ${WORKINGDIR}/mgi.gff
     checkExit
+    #
+    logit "Downloading SO terms..."
+    ${CURL} "${SO_URL}" 2>> ${LOGFILE} > ${SO_TERM_FILE}
 
     logit "Writing header file..."
     # Naming the MGI header file "0" to ensure it come first

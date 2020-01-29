@@ -70,29 +70,31 @@ def psl2gff(seqlen,start,end,strand):
 
 class Alignment(types.ListType):
 
-    # These are the standard field names.
+    # These are the standard field names. Comments lifted from the documentation at genome.ucsc.edu
     fields = [
-	"matches",	# 0
-	"misMatches",	# 1
-	"repMatches",	# 2
-	"nCount",	# 3
-	"qNumInsert",	# 4
-	"qBaseInsert",	# 5
-	"tNumInsert",	# 6
-	"tBaseInsert",	# 7
-	"strand",	# 8
-	"qName",	# 9
-	"qSize",	# 10
-	"qStart",	# 11
-	"qEnd",		# 12
-	"tName",	# 13
-	"tSize",	# 14
-	"tStart",	# 15
-	"tEnd",		# 16
-	"blockCount",	# 17
-	"blockSizes",	# 18
-	"qStarts",	# 19
-	"tStarts",	# 20
+	"matches",	# 0 Number of bases that match that aren't repeats
+	"misMatches",	# 1 Number of bases that don't match
+	"repMatches",	# 2 Number of bases that match but are part of repeats
+	"nCount",	# 3 Number of "N" bases
+	"qNumInsert",	# 4 Number of inserts in query
+	"qBaseInsert",	# 5 Number of bases inserted in query
+	"tNumInsert",	# 6 Number of inserts in target
+	"tBaseInsert",	# 7 Number of bases inserted in target
+	"strand",	# 8 "+" or "-" for query strand. For translated alignments, 
+                        #   second "+"or "-" is for target genomic strand.
+	"qName",	# 9 Query sequence name
+	"qSize",	# 10 Query sequence size
+	"qStart",	# 11 Alignment start position in query
+	"qEnd",		# 12 Alignment end position in query
+	"tName",	# 13 Target sequence name
+	"tSize",	# 14 Target sequence size
+	"tStart",	# 15 Alignment start position in target
+	"tEnd",		# 16 Alignment end position in target
+	"blockCount",	# 17 Number of blocks in the alignment (a block contains no gaps)
+	"blockSizes",	# 18 Comma-separated list of sizes of each block. If the query is a protein 
+                        #    and the target the genome, blockSizes are in amino acids.
+	"qStarts",	# 19 Comma-separated list of starting positions of each block in query
+	"tStarts",	# 20 Comma-separated list of starting positions of each block in target
 	]
     
     # a dict that maps field names to indices
@@ -147,6 +149,9 @@ class Alignment(types.ListType):
 	    x[i] = COMMA.join(map(str, x[i])) + COMMA
 	return TAB.join(map(str,x)) + NL
 
+    def score (self):
+        return self.matches - self.misMatches - self.qNumInsert - self.tNumInsert
+
     def matchLength(self):
         return self.qEnd - self.qStart
 
@@ -179,6 +184,7 @@ def toGff(input):
     alignments = iterate(input)
     idMaker = gff3.IdMaker()
     for a in alignments:
+        # mint an id of the form "matchN"
 	aid = idMaker.next("match")
 	(gs,ge) = psl2gff(a.tSize, a.tStart, a.tEnd, "+") # the alignment coords are always w.r.t + strand
         root = gff3.Feature([
@@ -197,6 +203,7 @@ def toGff(input):
 		    'matchLen' : a.matchLength(),
 		    'pctIdentity' : a.percentIdentity(),
 		    'pctLen' : a.percentLength(),
+                    'score' : a.score(),
 		    'qStart' : a.qStart,
 		    'qEnd' : a.qEnd,
 		    'qSize' : a.qSize,

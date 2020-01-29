@@ -71,7 +71,7 @@ def sql(queries, parsers=None, connection=None):
 #
 def __test__():
     def p(r):
-        print r['symbol'], r['name']
+        print( r['symbol'], r['name'])
 
     qlist = [
       'select count(*) from mrk_marker',
