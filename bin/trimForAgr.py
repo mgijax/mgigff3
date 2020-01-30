@@ -20,6 +20,11 @@ def loadSOTerms () :
     return soterm2id
 
 ###
+def log (s) :
+    sys.stderr.write(s)
+    sys.stderr.write('\n')
+
+###
 def processModel (m, soterm2id) :
     # map so_term_name to its SO id and store it
     m.attributes["Ontology_term"] = soterm2id[m.attributes["so_term_name"]]
@@ -29,12 +34,12 @@ def processModel (m, soterm2id) :
             # - 3 levels
             # - only mRNA or transcript at middle level
             # - only exon or CDS at leaf
-            ttypes = ["transcript", "mRNA"]
+            ttypes = ["transcript", "mRNA", "lnc_RNA", "pseudogenic_transcript", "unconfirmed_transcript"]
             ltypes = ["exon","CDS"]
         elif m.so_term_name == "miRNA_gene":
             # miRNA genes: restricted to gene->pre_miRNA->miRNA
-            ttypes = ["pre_miRNA"]
-            ltypes = ["miRNA"]
+            ttypes = ["pre_miRNA", "miRNA"]
+            ltypes = ["miRNA", "exon"]
         else:
             # else any mid- or leaf-level types are ok
             ttypes = None
@@ -44,15 +49,24 @@ def processModel (m, soterm2id) :
             for e in list(t.children):
                 if ltypes and not e.type in ltypes:
                     t.children.remove(e)
-            if len(t.children) == 0 or (ttypes and not t.type in ttypes):
+            if len(t.children) == 0 or (ttypes and not t.type in ttypes) or not t.attributes.get("transcript_id", None):
                 m.children.remove(t)
+                log("Removing %s" % str(t))
             else:
                 try:
-                    curie = t.source + ":" + t.attributes["transcript_id"]
+                    # special requirements for transcripts for 1.0.1.0
+                    source = "NCBI_Gene" if t.source == "NCBI" else t.source
+                    curie = source + ":" + t.attributes["transcript_id"]
                     t.attributes["curie"] = curie
                     t.attributes["Dbxref"] = curie
-                    t.attributes["ontology_term"] = soterm2id[t.type]
+                    t.attributes["Ontology_term"] = soterm2id[t.type]
+                    if t.type == "mRNA" and m.attributes["so_term_name"] != "protein_coding_gene" :
+                        # for AGR, if a gene has a coding transcript, it must be protein_coding_gene
+                        log("WARNING: Changing gene to protein coding because mRNA detected: %s %s" % (m.ID, m.attributes["Name"]))
+                        m.attributes["so_term_name"] = "protein_coding_gene"
+                        m.attributes["Ontology_term"] = "SO:0001217"
                 except KeyError:
+                    log("KeyError (%s) for transcript: %s" % (sys.exc_info()[1],str(t)))
                     m.children.remove(t)
         #
         for f in gff3.flattenModel2(m):
@@ -70,6 +84,7 @@ def writeHeader (timestamp, build) :
 
 ###
 def main ():
+    log("Starting trimForAgr...")
     #
     soterm2id = loadSOTerms()
     #
