@@ -33,10 +33,10 @@ def count(f, path, root):
             count(c, path+[c.type], root)
 
 def pcounts(msg, counts):
-    ks = counts.keys()
+    ks = list(counts.keys())
     ks.sort()
     for k in ks:
-        print "\t".join([msg, k, str(counts[k]) ])
+        print("\t".join([msg, k, str(counts[k]) ]))
 
  
 def main(featureSources):

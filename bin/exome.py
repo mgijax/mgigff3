@@ -13,7 +13,7 @@ sys.stdout.write(gff3.HEADER)
 for feats in gff3.models(sys.stdin, flatten=True):
     #
     m = feats[0]
-    exons = filter(lambda f: "exon" in f.type or "match_part" == f.type, feats) # includes pseudogenic exons
+    exons = [f for f in feats if "exon" in f.type or "match_part" == f.type] # includes pseudogenic exons
     #
     unique = {}
     for e in exons:
@@ -32,7 +32,7 @@ for feats in gff3.models(sys.stdin, flatten=True):
             }
             e.source = "MGI"
     #
-    ks = unique.keys()
+    ks = list(unique.keys())
     ks.sort()
     for i,k in enumerate(ks):
         e = unique[k]

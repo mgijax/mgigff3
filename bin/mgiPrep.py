@@ -156,9 +156,9 @@ def main () :
         '.',
         strand,
         '.',
-        ''.join(map(lambda x: x[0]+'='+x[1]+';', attrs))
+        ''.join([x[0]+'='+x[1]+';' for x in attrs])
       ]
-      print '\t'.join(gffrec)
+      print('\t'.join(gffrec))
 
 ####
 #

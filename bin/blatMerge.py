@@ -28,7 +28,7 @@ class MgiComputedMerger:
         sys.stderr.write(m)
 
     def usage(self):
-        print "USAGE: python %s PSLFILE MGISEQIDFILE > OUTFILE" % sys.argv[0]
+        print("USAGE: python %s PSLFILE MGISEQIDFILE > OUTFILE" % sys.argv[0])
         sys.exit(-1)
 
     def loadSeqidFile(self):
@@ -73,12 +73,12 @@ class MgiComputedMerger:
         self.log('\n')
         
     def processAlignments (self) :    
-        for mgiid, mfeats in self.mgi2feats.items():
+        for mgiid, mfeats in list(self.mgi2feats.items()):
             # the top-level mgi feature
             mf = mfeats[0]
             # throw out mult matches for the same seqid (ie only keep single matches)
-            singles = filter(lambda m: self.counts[self.qNameNoVersion(m)] == 1, mfeats[1:])
-            multiples = filter(lambda m: self.counts[self.qNameNoVersion(m)] > 1, mfeats[1:])
+            singles = [m for m in mfeats[1:] if self.counts[self.qNameNoVersion(m)] == 1]
+            multiples = [m for m in mfeats[1:] if self.counts[self.qNameNoVersion(m)] > 1]
             if len(multiples) :
                 self.logRejects("REJECTING SEQUENCES for GENE (%s) - multiple matches per sequence: %s" % (mgiid, set([ m.qName for m in multiples ])))
             # if no single matches, reject the gene
@@ -166,11 +166,11 @@ class MgiComputedMerger:
             if c : return c
             c = cmp(fa.start, fb.start)
             return c
-        allFeats = self.mgi2feats.values()
+        allFeats = list(self.mgi2feats.values())
         allFeats.sort(byTopLevel)
         for feats in allFeats:
             mf = feats[0]
-            matches = filter( lambda x: not "_rejected" in x.attributes, feats[1:] )
+            matches = [x for x in feats[1:] if not "_rejected" in x.attributes]
             if "_rejected" in mf.attributes or len(matches) == 0:
                 continue
             model = [mf]

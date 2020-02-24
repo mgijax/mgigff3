@@ -68,7 +68,7 @@ def psl2gff(seqlen,start,end,strand):
     return (gstart,gend)
     '''
 
-class Alignment(types.ListType):
+class Alignment(list):
 
     # These are the standard field names. Comments lifted from the documentation at genome.ucsc.edu
     fields = [
@@ -98,13 +98,13 @@ class Alignment(types.ListType):
         ]
     
     # a dict that maps field names to indices
-    field2index = dict(map(lambda a : (a[1],a[0]), enumerate(fields)))
+    field2index = dict([(a[1],a[0]) for a in enumerate(fields)])
 
     #
     def __init__(self, arg=None):
         if arg is None:
             arg = [0,0,0,0,0,0,0,0,'','',0,0,0,'',0,0,0,0,[],[],[]]
-        elif type(arg) is types.StringType:
+        elif type(arg) is bytes:
             arg = self.__parse(arg)
 
         if len(arg) != len(self.fields):
@@ -122,7 +122,7 @@ class Alignment(types.ListType):
             elif i >= 18:
                 if f.endswith(COMMA):
                     f = f[:-1]
-                fields[i] = map(int,f.strip().split(COMMA))
+                fields[i] = list(map(int,f.strip().split(COMMA)))
             else:
                 fields[i] = int(f)
         return fields
@@ -166,14 +166,14 @@ def iterate(input):
     # Set up the input
     #
     closeit = False
-    if type(input) is types.StringType:
+    if type(input) is bytes:
         if input=="-":
             input = sys.stdin
         else:
             input = open(input, 'r')
             closeit = True
     for a in input:
-        if type(a) is types.StringType:
+        if type(a) is bytes:
             a = Alignment(a)
         yield a
     if closeit:

@@ -99,4 +99,4 @@ for r in db.sql(gwomSequences):
       mcvtype,
       sotype,
     ]
-    print "\t".join(line)
+    print("\t".join(line))

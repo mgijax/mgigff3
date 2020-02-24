@@ -65,7 +65,7 @@ class ConvertNCBI:
         
     def getGeneID(self, f):
         ids = f.attributes.get('Dbxref',[])
-        if type(ids) is types.StringType:
+        if type(ids) is bytes:
             ids = [ids]
         for x in ids:
             if x.startswith('GeneID:'):
@@ -129,18 +129,18 @@ class ConvertNCBI:
           return None
         #
         xrs = f.attributes.get('Dbxref', [])
-        if type(xrs) is types.StringType:
+        if type(xrs) is bytes:
             xrs = [xrs]
 
         # skip miRNAs
-        if len(filter(lambda x: x.startswith("miRBase:"), xrs)):
+        if len([x for x in xrs if x.startswith("miRBase:")]):
           return None
         #
         f[0] = self.currentRegion
         f[1] = "NCBI"
         if "Parent" not in f.attributes:
             # set the curie for top level nodes
-            xrs = filter(lambda x: x.startswith("GeneID:"), xrs)
+            xrs = [x for x in xrs if x.startswith("GeneID:")]
             if len(xrs) == 1:
                 f.attributes["curie"] = xrs[0].replace("GeneID:","NCBI_Gene:")
             # set the so_term_name for top level nodes
@@ -176,7 +176,7 @@ class ConvertNCBI:
                skipped[f.type] = n + 1
         if len(skipped):
             self.log("Counts of skipped features, by type:\n")
-            tps = skipped.keys()
+            tps = list(skipped.keys())
             tps.sort()
             for t in tps:
                 self.log("%s\t%d\n"%(t, skipped[t]))
@@ -219,7 +219,7 @@ class ConvertNCBI:
            self.checkPseudogene(m)
            self.checkTranscriptNames(m)
            for f in gff3.flattenModel(m):
-               print str(f),
+               print(str(f), end=' ')
 
 #
 if __name__ == "__main__":

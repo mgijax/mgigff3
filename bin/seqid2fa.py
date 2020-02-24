@@ -12,7 +12,7 @@
 import sys
 import types
 import time
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import xml.dom.minidom
 
 # FIXME. Move all these into config.sh and access via os.environ
@@ -24,10 +24,10 @@ EMAIL     = "Joel.Richardson@jax.org"
 NTRIES    = 3
 
 def openSequenceFetch(ids, tool, email, db='nucleotide', retmode='text', rettype='fasta',batchsize=BATCHSIZE,sleeptime=SLEEPTIME):
-    for i in xrange(0, len(ids), batchsize):
+    for i in range(0, len(ids), batchsize):
 
         # Get the next batch of ids.
-        params = urllib.urlencode(
+        params = urllib.parse.urlencode(
            {'db': db,
             'retmode' : retmode,
             'rettype' : rettype,
@@ -42,7 +42,7 @@ def openSequenceFetch(ids, tool, email, db='nucleotide', retmode='text', rettype
 
             try:
                 time.sleep(sleeptime)
-                fd = urllib.urlopen(FETCHURL, params)
+                fd = urllib.request.urlopen(FETCHURL, params)
             except:
                 continue
 
@@ -87,7 +87,7 @@ def fetchSequences(
     lines = fd.readlines()
     fd.close()
     #
-    ids = map(lambda l:l.split()[0], lines)
+    ids = [l.split()[0] for l in lines]
     if outfile == "-" or outfile is sys.stdout:
         fd = sys.stdout
     else:

@@ -65,7 +65,7 @@
 import sys
 import os
 import types
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import itertools
 import heapq
 import re
@@ -136,7 +136,7 @@ class ParseError(RuntimeError):
 #       f.attributes["xxx"]
 # provided "xxx" in not one of the 9 GFF3 column names.
 #
-class Feature(types.ListType):
+class Feature(list):
 
     # These are the standard field names.
     fields = [
@@ -152,14 +152,14 @@ class Feature(types.ListType):
         ]
     
     # a dict that maps field names to indices
-    field2index = dict(map(lambda a : (a[1],a[0]), enumerate(fields)))
+    field2index = dict([(a[1],a[0]) for a in enumerate(fields)])
 
     #
     def __init__(self, arg=None):
         if arg is None:
             arg = ['.'] * 9
             arg[-1] = []
-        elif type(arg) is types.StringType:
+        elif type(arg) is bytes:
             arg = parse(arg)
         elif len(arg) != 9:
             raise ValueError("Invalid initializer for GffFeature: " \
@@ -167,17 +167,17 @@ class Feature(types.ListType):
         types.ListType.__init__(self,arg)
         #
         t8 = type(self[8])
-        if t8 is types.StringType:
+        if t8 is bytes:
             self[8] = parseColumn9(self[8])
-        elif t8 is types.ListType:
+        elif t8 is list:
             self[8] = dict(self[8])
-        elif t8 is types.DictType:
+        elif t8 is dict:
             # Copy the dict.
             # If there are list valued attrs, make sure we
             # don't share the list obj.
             d = {}
-            for k,v in self[8].iteritems():
-                if type(v) is types.ListType:
+            for k,v in self[8].items():
+                if type(v) is list:
                     d[k] = v[:]
                 else:
                     d[k] = v
@@ -204,7 +204,7 @@ class Feature(types.ListType):
     def __setattr__(self, name, value):
         if (name=="start" or name=="end") and value != ".":
             value = int(value)
-        elif name=="Parent" and type(value) is types.StringType:
+        elif name=="Parent" and type(value) is bytes:
             value = [ value ]
         i = Feature.field2index.get(name,None)
         if i is None:
@@ -257,7 +257,7 @@ def iterate(source, returnGroups=False, returnHeader=False):
     # Set up the input
     #
     closeit = False
-    if type(source) is types.StringType:
+    if type(source) is bytes:
         if source=="-":
             source = sys.stdin
         else:
@@ -323,7 +323,7 @@ def iterate(source, returnGroups=False, returnHeader=False):
 #   t.parents == [m].
 #
 def models(features, flatten=False, returnHeader=False):
-    if type(features) is types.StringType \
+    if type(features) is bytes \
     or type(features) is types.FileType:
         features = iterate(features, returnHeader=returnHeader)
     #
@@ -364,7 +364,7 @@ def models(features, flatten=False, returnHeader=False):
             id2feature[f.ID] = f
         if hasattr(f, 'Parent'):
             pts = f.Parent
-            if type(pts) is types.StringType:
+            if type(pts) is bytes:
                 pts = [pts]
             for pid in pts:
                 try:
@@ -434,7 +434,7 @@ def reassignIDs(feats, idMaker):
             f.Parent = [ idmap[pid] for pid in pids ]
         except KeyError as e:
             for f in feats:
-                print f
+                print(f)
             raise e
 
 #----------------------------------------------------
@@ -450,7 +450,7 @@ def copyModel(mfeats):
 # Returns:
 #  iterator over the merged stream
 def merge(*featureIters):
-    mis = [ itertools.imap(lambda m:(m.seqid, m.start, m), i) for i in featureIters ]
+    mis = [ map(lambda m:(m.seqid, m.start, m), i) for i in featureIters ]
     for m in heapq.merge(*mis):
         yield m[2]
 
@@ -498,7 +498,7 @@ def splitFile(features, directory, fileTemplate):
             c2file[c] = fd
         fd.write(str(f))
 
-    for (c,fd) in c2file.items():
+    for (c,fd) in list(c2file.items()):
         fd.close()
 
 #----------------------------------------------------
@@ -533,7 +533,7 @@ def crossReference(features):
         f.__dict__["parents"] = OrderedSet()
         f.__dict__["children"] = OrderedSet()
         pIds = f.attributes.get("Parent",[])
-        if type(pIds) is types.StringType: pIds = [pIds]
+        if type(pIds) is bytes: pIds = [pIds]
         for pid in pIds:
             parent = id2feature[pid]
             f.parents.add(parent)
@@ -575,7 +575,7 @@ def parseColumn9(value):
         if len(tt) != 2:
             raise ParseError("Bad column 9 format near '%s'."%t)
         n = unquote(tt[0].strip())
-        v = map(unquote, tt[1].strip().split(COMMA))
+        v = list(map(unquote, tt[1].strip().split(COMMA)))
         if len(v) == 1 and not n in MULTIVALUED:
             v = v[0]
         c9[n] = v
@@ -595,7 +595,7 @@ def quote(v):
 # Unquotes all hex quoted characters.
 #
 def unquote(v):
-    return urllib.unquote(str(v)) 
+    return urllib.parse.unquote(str(v)) 
 
 #----------------------------------------------------
 #
@@ -607,14 +607,14 @@ PRE = ['ID','Name','Parent']
 # for column 9.
 #
 def formatColumn9(vals):
-    if type(vals) is types.StringType:
+    if type(vals) is bytes:
         return quote(vals)
     parts = []
     for n in PRE:
         x = vals.get(n, None)
         if x:
             parts.append(formatAttribute(n,x))
-    for n,v in vals.iteritems():
+    for n,v in vals.items():
         if n not in PRE and v not in [None, '']:
             parts.append(formatAttribute(n,v))
     ret = C9SEP.join(parts)
@@ -626,7 +626,7 @@ def formatColumn9(vals):
 # column 9.
 #
 def formatAttribute(n, v):
-    if type(v) is types.ListType:
+    if type(v) is list:
         return "%s=%s" % (quote(n), COMMA.join(map(quote,v)))
     else:
         return "%s=%s" % (quote(n), quote(v))
@@ -653,7 +653,7 @@ def format(tokens):
 if __name__=="__main__":
     def printeval(expr, ns):
         v = eval(expr,ns)
-        print expr, "\t=", v
+        print(expr, "\t=", v)
         return v
 
     def selftest():
@@ -676,7 +676,7 @@ if __name__=="__main__":
         else:
             fd = open(sys.argv[1])
         for f in iterate(sys.argv[1], returnHeader=True):
-            print f,
+            print(f, end=' ')
         fd.close()
     else:
         f=selftest()

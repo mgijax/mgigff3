@@ -25,10 +25,10 @@ def connect(host=None,database=None, user=None, password=None):
 #
 def sql(queries, parsers=None, connection=None):
     single = False
-    if type(queries) not in [types.ListType,types.TupleType]:
+    if type(queries) not in [list,tuple]:
         queries = [queries]
         single=True
-    if type(parsers) not in [types.ListType,types.TupleType]:
+    if type(parsers) not in [list,tuple]:
         parsers = [parsers]*len(queries)
 
     if len(queries) != len(parsers):
@@ -71,7 +71,7 @@ def sql(queries, parsers=None, connection=None):
 #
 def __test__():
     def p(r):
-        print( r['symbol'], r['name'])
+        print(( r['symbol'], r['name']))
 
     qlist = [
       'select count(*) from mrk_marker',
