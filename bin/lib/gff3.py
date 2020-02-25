@@ -160,14 +160,20 @@ class Feature(list):
             arg = ['.'] * 9
             arg[-1] = []
         elif type(arg) is bytes:
+            arg = arg.decode('utf-8')
+            arg = parse(arg)
+        elif type(arg) is str:
             arg = parse(arg)
         elif len(arg) != 9:
             raise ValueError("Invalid initializer for GffFeature: " \
                 + (" %d fields\n" % len(arg)) + str(arg))
-        types.ListType.__init__(self,arg)
+        list.__init__(self,arg)
         #
         t8 = type(self[8])
         if t8 is bytes:
+            self[8] = self[8].decode('utf-8')
+            self[8] = parseColumn9(self[8])
+        elif t8 is str:
             self[8] = parseColumn9(self[8])
         elif t8 is list:
             self[8] = dict(self[8])
@@ -658,7 +664,7 @@ if __name__=="__main__":
 
     def selftest():
         f = printeval('Feature()', globals())
-        f = printeval("Feature('12      MGI     gene    12345678        12347890        .       +       .       ID=MGI:222222;Name=Abc')", globals())
+        f = printeval("Feature(b'12\tMGI\tgene\t12345678\t12347890\t.\t+\t.\tID=MGI:222222;Name=Abc')", globals())
         ns = {'f':f}
         printeval('f[0]', ns)
         printeval('f[0:4]', ns)
