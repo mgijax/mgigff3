@@ -3,8 +3,9 @@
 set -o pipefail
 
 # ---------------------
-export PYTHON=python
-export PYTHON24="python2.4"
+export PATH="${PATH}:/opt/python3.7/bin"
+# ---------------------
+export PYTHON=python3
 export CURL=curl
 export CP=cp
 export GUNZIP=gunzip

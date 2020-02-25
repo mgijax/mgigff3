@@ -24,7 +24,7 @@ source ${DIR}/bin/config.sh
 
 # 1. generate a file of mgi_id/seq_id pairs.
 logit "Blat models: getting MGI data..."
-${PYTHON24} ${BIN}/blatPrep.py > ${WORKINGDIR}/blat.seqids.txt
+${PYTHON} ${BIN}/blatPrep.py > ${WORKINGDIR}/blat.seqids.txt
 checkExit
 
 # 2a. feed the sequence ids (2nd column) to the fetch script
