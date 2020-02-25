@@ -13,7 +13,7 @@
 #
 
 import sys
-import mgiadhoc as db
+from lib import mgiadhoc as db
 
 geneModelLdbKeys = '59,60,83' # Ensembl gene model, NCBI gene model, miRBase
 ldbkey2prefix = {

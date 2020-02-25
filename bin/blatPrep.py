@@ -19,7 +19,7 @@
 #       mcvtype The gene's MCV type
 #       sotype  The gene's SO type
 
-import mgiadhoc as db
+from lib import mgiadhoc as db
 
 geneModelLdbKeys = '59,60,83,85'
 
