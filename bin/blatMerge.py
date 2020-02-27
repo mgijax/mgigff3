@@ -159,15 +159,10 @@ class MgiComputedMerger:
             mf.end = max([ s.end for s in mfeats[1:] ])
 
     def output (self) :
-        def byTopLevel(a, b):
-            fa = a[0]
-            fb = b[0]
-            c = cmp(fa.seqid, fb.seqid)
-            if c : return c
-            c = cmp(fa.start, fb.start)
-            return c
+        def topLevelKey (fs) :
+            return (fs[0].seqid, fs[0].start)
         allFeats = list(self.mgi2feats.values())
-        allFeats.sort(byTopLevel)
+        allFeats.sort(key=topLevelKey)
         for feats in allFeats:
             mf = feats[0]
             matches = [x for x in feats[1:] if not "_rejected" in x.attributes]

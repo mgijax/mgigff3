@@ -269,6 +269,7 @@ if [ $nargs -eq 0 -o $domerge == T ]; then
     do : 
 	logit
 	logit "Merging chr${i}..."
+	logit "${PYTHON} ${BIN}/merge.py ${WORKINGDIR}/*.chr${i}.gff > ${WORKINGDIR}/chr${i}.gff 2>> ${LOGFILE}"
 	${PYTHON} ${BIN}/merge.py ${WORKINGDIR}/*.chr${i}.gff > ${WORKINGDIR}/chr${i}.gff 2>> ${LOGFILE}
 	checkExit
     done

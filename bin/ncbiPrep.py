@@ -76,7 +76,7 @@ class ConvertNCBI:
 
     # Processes the next feature from the NCBI gff3 file.
     # Returns the feature, or None if the feature should be skipped.
-    # (One of the main things this code does is decided which features 
+    # (One of the main things this code does is decide which features 
     # we're interested in.)
     #
     # The NCBI file uses sequence ids in col 1 to refer to chromosomes (and contigs).
@@ -219,7 +219,7 @@ class ConvertNCBI:
            self.checkPseudogene(m)
            self.checkTranscriptNames(m)
            for f in gff3.flattenModel(m):
-               print(str(f), end=' ')
+               print(str(f), end='')
 
 #
 if __name__ == "__main__":

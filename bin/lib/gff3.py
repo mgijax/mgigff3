@@ -70,6 +70,7 @@ import itertools
 import heapq
 import re
 from OrderedSet import OrderedSet
+from io import IOBase
 
 #----------------------------------------------------
 HEADER = '##gff-version 3\n'
@@ -170,10 +171,7 @@ class Feature(list):
         list.__init__(self,arg)
         #
         t8 = type(self[8])
-        if t8 is bytes:
-            self[8] = self[8].decode('utf-8')
-            self[8] = parseColumn9(self[8])
-        elif t8 is str:
+        if t8 is str:
             self[8] = parseColumn9(self[8])
         elif t8 is list:
             self[8] = dict(self[8])
@@ -210,7 +208,7 @@ class Feature(list):
     def __setattr__(self, name, value):
         if (name=="start" or name=="end") and value != ".":
             value = int(value)
-        elif name=="Parent" and type(value) is bytes:
+        elif name=="Parent" and type(value) is str:
             value = [ value ]
         i = Feature.field2index.get(name,None)
         if i is None:
@@ -263,7 +261,7 @@ def iterate(source, returnGroups=False, returnHeader=False):
     # Set up the input
     #
     closeit = False
-    if type(source) is bytes:
+    if type(source) is str:
         if source=="-":
             source = sys.stdin
         else:
@@ -329,8 +327,8 @@ def iterate(source, returnGroups=False, returnHeader=False):
 #   t.parents == [m].
 #
 def models(features, flatten=False, returnHeader=False):
-    if type(features) is bytes \
-    or type(features) is types.FileType:
+    if type(features) is str \
+    or isinstance(features, IOBase):
         features = iterate(features, returnHeader=returnHeader)
     #
     id2feature = {}
@@ -370,7 +368,7 @@ def models(features, flatten=False, returnHeader=False):
             id2feature[f.ID] = f
         if hasattr(f, 'Parent'):
             pts = f.Parent
-            if type(pts) is bytes:
+            if type(pts) is str:
                 pts = [pts]
             for pid in pts:
                 try:
@@ -456,9 +454,9 @@ def copyModel(mfeats):
 # Returns:
 #  iterator over the merged stream
 def merge(*featureIters):
-    mis = [ map(lambda m:(m.seqid, m.start, m), i) for i in featureIters ]
+    mis = [ map(lambda m:(m.seqid, m.start, m.ID, m), i) for i in featureIters ]
     for m in heapq.merge(*mis):
-        yield m[2]
+        yield m[3]
 
 #----------------------------------------------------
 #
@@ -539,7 +537,7 @@ def crossReference(features):
         f.__dict__["parents"] = OrderedSet()
         f.__dict__["children"] = OrderedSet()
         pIds = f.attributes.get("Parent",[])
-        if type(pIds) is bytes: pIds = [pIds]
+        if type(pIds) is str: pIds = [pIds]
         for pid in pIds:
             parent = id2feature[pid]
             f.parents.add(parent)
@@ -613,7 +611,7 @@ PRE = ['ID','Name','Parent']
 # for column 9.
 #
 def formatColumn9(vals):
-    if type(vals) is bytes:
+    if type(vals) is str:
         return quote(vals)
     parts = []
     for n in PRE:
