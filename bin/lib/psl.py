@@ -47,7 +47,6 @@
 #
 
 import sys
-import types
 import gff3
 
 TAB     = '\t'
@@ -104,13 +103,13 @@ class Alignment(list):
     def __init__(self, arg=None):
         if arg is None:
             arg = [0,0,0,0,0,0,0,0,'','',0,0,0,'',0,0,0,0,[],[],[]]
-        elif type(arg) is bytes:
+        elif type(arg) is str:
             arg = self.__parse(arg)
 
         if len(arg) != len(self.fields):
             raise ValueError("Invalid initializer for Alignment: " \
                 + (" %d fields\n" % len(arg)) + str(arg))
-        types.ListType.__init__(self,arg)
+        list.__init__(self,arg)
 
     def __parse(self,line):
         fields = line.split(TAB)
@@ -166,14 +165,14 @@ def iterate(input):
     # Set up the input
     #
     closeit = False
-    if type(input) is bytes:
+    if type(input) is str:
         if input=="-":
             input = sys.stdin
         else:
             input = open(input, 'r')
             closeit = True
     for a in input:
-        if type(a) is bytes:
+        if type(a) is str:
             a = Alignment(a)
         yield a
     if closeit:

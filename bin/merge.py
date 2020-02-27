@@ -15,7 +15,7 @@
 #    2. merges m models of a gene from m providers into a single model.
 #
 
-import gff3
+from lib import gff3
 import sys
 import types
 

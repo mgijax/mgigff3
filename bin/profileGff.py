@@ -52,7 +52,7 @@ def main(featureSources):
         es = list(exemplars[k])
         es.sort()
         if len(es) > 5:
-            es = es[::len(es)/5]
+            es = es[::int(len(es)/5)]
         paths[k] = str(paths[k])+ "\t" + "," .join(es)
     pcounts("path", paths)
 

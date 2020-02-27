@@ -34,7 +34,7 @@ def openSequenceFetch(ids, tool, email, db='nucleotide', retmode='text', rettype
             'id' : ",".join(ids[i:i+batchsize]),
             'tool' : tool,
             'email' : email
-            })
+            }).encode()
 
         # For each batch, try up to NTRIES time to get the sequences. Provides
         # some protection from intermittant errors from the eUtils server.
@@ -46,7 +46,7 @@ def openSequenceFetch(ids, tool, email, db='nucleotide', retmode='text', rettype
             except:
                 continue
 
-            line = fd.readline()
+            line = fd.readline().decode('utf-8')
             if not line:
                 break
             elif not line.startswith(">"):
@@ -60,7 +60,7 @@ def openSequenceFetch(ids, tool, email, db='nucleotide', retmode='text', rettype
             # success!
             yield line
             for line in fd:
-                yield line
+                yield line.decode('utf-8')
             fd.close()
             break
         else:
