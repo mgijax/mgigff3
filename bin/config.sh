@@ -69,8 +69,8 @@ export COUNTCMD="${PYTHON} ${BIN}/profileGff.py"
 
 # ---------------------
 #
-export NCBIfile=ref_GRCm38.p6_top_level.gff3
-export NCBIurl=ftp://ftp.ncbi.nlm.nih.gov/genomes/Mus_musculus/GFF/${NCBIfile}.gz
+export NCBIfile=GCF_000001635.26_GRCm38.p6_genomic.gff
+export NCBIurl=ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Mus_musculus/latest_assembly_versions/GCF_000001635.26_GRCm38.p6/${NCBIfile}.gz
 export NCBIprep="${PYTHON} ${BIN}/ncbiPrep.py"
 #
 export MIRfile=mmu.gff3
