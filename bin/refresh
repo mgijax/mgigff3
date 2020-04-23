@@ -188,10 +188,13 @@ if [ $nargs -eq 0 -o $domgi == T ]; then
     # Queries MGI data. Writes genes and pseudogenes into gff3 file. Each has Dbxrefs containing
     # any provider model ids. Downstream merging will be directed by this data.
     logit "Prepping mgi ..."
-    ${PYTHON24} ${BIN}/mgiPrep.py 2>> ${LOGFILE} > ${WORKINGDIR}/mgi.gff
+    ${PYTHON} ${BIN}/mgiPrep.py 2>> ${LOGFILE} > ${WORKINGDIR}/mgi.gff
     checkExit
     ${SPLITCMD} -t "mgi.chr%s.gff" < ${WORKINGDIR}/mgi.gff
     checkExit
+    #
+    logit "Downloading SO terms..."
+    ${CURL} "${SO_URL}" 2>> ${LOGFILE} > ${SO_TERM_FILE}
 
     logit "Writing header file..."
     # Naming the MGI header file "0" to ensure it come first
@@ -266,6 +269,7 @@ if [ $nargs -eq 0 -o $domerge == T ]; then
     do : 
 	logit
 	logit "Merging chr${i}..."
+	logit "${PYTHON} ${BIN}/merge.py ${WORKINGDIR}/*.chr${i}.gff > ${WORKINGDIR}/chr${i}.gff 2>> ${LOGFILE}"
 	${PYTHON} ${BIN}/merge.py ${WORKINGDIR}/*.chr${i}.gff > ${WORKINGDIR}/chr${i}.gff 2>> ${LOGFILE}
 	checkExit
     done

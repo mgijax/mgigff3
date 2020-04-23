@@ -3,11 +3,11 @@
 #
 # Merges models into the MGI gene.
 # 
-#	$ python merge.py file1 file2 [file3 ...]
+#       $ python merge.py file1 file2 [file3 ...]
 #
 # The files must contain data for a single chromosome (and all must be the same chromosome!)
 # Example:
-#	$ python merge.py ../working/mgi.chr14.gff ../working/ncbi.chr14.gff > test.gff
+#       $ python merge.py ../working/mgi.chr14.gff ../working/ncbi.chr14.gff > test.gff
 # Each file must be sorted appropriately. Model features clustered, no forward Parent references, etc,
 #
 # This script merges at two levels: 
@@ -15,7 +15,7 @@
 #    2. merges m models of a gene from m providers into a single model.
 #
 
-import gff3
+from lib import gff3
 import sys
 import types
 
@@ -23,10 +23,10 @@ WINDOWSIZE = 200000
 
 class ModelMerger:
     def __init__(self, wsize=WINDOWSIZE):
-	self.idMaker = gff3.IdMaker()
-	self.pendingMgi = []
-	self.pendingNonMgi = []
-	self.windowSize = wsize
+        self.idMaker = gff3.IdMaker()
+        self.pendingMgi = []
+        self.pendingNonMgi = []
+        self.windowSize = wsize
 
     # Message logger
     #
@@ -36,23 +36,23 @@ class ModelMerger:
     # Prints a model to standard out. 
     #
     def printModel(self, feats):
-	for f in feats:
-	    sys.stdout.write(str(f))
+        for f in feats:
+            sys.stdout.write(str(f))
 
     # Propagates each gene_id to all features in the gene.
     # Propagates transcript_id to all features in the transcript.
     #
     def propagatePartIds(self, m):
-	if not "gene_id" in m.attributes:
-	    return
+        if not "gene_id" in m.attributes:
+            return
         gene_id = m.gene_id
-	for t in m.children:
-	    t.gene_id = gene_id
-	    tid = t.transcript_id if "transcript_id" in t.attributes else None
-	    for e in t.children:
-	        e.gene_id = gene_id
-		if tid:
-		    e.transcript_id = tid
+        for t in m.children:
+            t.gene_id = gene_id
+            tid = t.transcript_id if "transcript_id" in t.attributes else None
+            for e in t.children:
+                e.gene_id = gene_id
+                if tid:
+                    e.transcript_id = tid
 
     # Merges model f into m. f is the root of a gene model from some provider. 
     # m is the MGI feature and is the root of a merged model hierarchy that
@@ -68,53 +68,53 @@ class ModelMerger:
     # Merging a gene with a pseudogene causes the addition of a biotypeConflict attribute.
     #
     def mergeModels(self, m, f):
-	if (m.strand == '.') :
-	  self.log("Assigning strand to MGI feature from model: %s %s(%s)\n" % (m.ID, f.ID, f.strand))
-	  m.strand = f.strand
-	elif (m.strand != f.strand) :
-	  self.log("Cannot merge models because strands do not match: %s(%s) %s(%s)\n" % (m.ID, m.strand, f.ID, f.strand))
-	  return
-	m.start = min(m.start, f.start)
-	m.end   = max(m.end,   f.end)
-	feats = gff3.copyModel(gff3.flattenModel(f))
-	#
-	if ("pseudo" in m.type and "pseudo" not in f.type) \
-	or ("pseudo" not in m.type and "pseudo" in f.type): 
-	    m.biotypeConflict = "true"
-	#
-	f._merged.append(m.curie)
-	m._merged.append(f.curie)
-	for c in feats[0].children:
-	    c.Parent=[m.ID]
-	    c.parents.clear()
-	    c.parents.add(m)
-	    m.children.add(c)
-	return
+        if (m.strand == '.') :
+          self.log("Assigning strand to MGI feature from model: %s %s(%s)\n" % (m.ID, f.ID, f.strand))
+          m.strand = f.strand
+        elif (m.strand != f.strand) :
+          self.log("Cannot merge models because strands do not match: %s(%s) %s(%s)\n" % (m.ID, m.strand, f.ID, f.strand))
+          return
+        m.start = min(m.start, f.start)
+        m.end   = max(m.end,   f.end)
+        feats = gff3.copyModel(gff3.flattenModel(f))
+        #
+        if ("pseudo" in m.type and "pseudo" not in f.type) \
+        or ("pseudo" not in m.type and "pseudo" in f.type): 
+            m.biotypeConflict = "true"
+        #
+        f._merged.append(m.curie)
+        m._merged.append(f.curie)
+        for c in feats[0].children:
+            c.Parent=[m.ID]
+            c.parents.clear()
+            c.parents.add(m)
+            m.children.add(c)
+        return
     #
     def reassignIDs(self, m):
-	self.idMap = {}
-	self.idCounts = {}
-	feats = gff3.flattenModel(m)
+        self.idMap = {}
+        self.idCounts = {}
+        feats = gff3.flattenModel(m)
         for f in feats:
-	    # handle CDSs, where multiple features have same ID.
-	    if f.attributes.get("ID", None) in self.idMap:
-	        f.ID = self.idMap[f.ID]
-		continue
-	    # generate ID
-	    tp = f.type
-	    tp = tp.replace("pseudogenic_","")
-	    if tp.endswith("RNA") or "transcript" in tp:
-	        tp = "transcript"
-	    tp = tp.lower()
-	    count = self.idCounts[tp] = self.idCounts.setdefault(tp, 0) + 1
-	    newid = m.ID if f is m else "%s_%s_%d" % (m.ID.replace(":","_"),tp,count)
-	    # update f, self.idMap
-	    if 'ID' in f.attributes: self.idMap[f.ID] = newid
-	    f.ID = newid
-	# change Parent refs accordingly
-	for f in feats:
-	    if "Parent" in f.attributes:
-	        f.Parent = [ self.idMap[pid] for pid in f.Parent ]
+            # handle CDSs, where multiple features have same ID.
+            if f.attributes.get("ID", None) in self.idMap:
+                f.ID = self.idMap[f.ID]
+                continue
+            # generate ID
+            tp = f.type
+            tp = tp.replace("pseudogenic_","")
+            if tp.endswith("RNA") or "transcript" in tp:
+                tp = "transcript"
+            tp = tp.lower()
+            count = self.idCounts[tp] = self.idCounts.setdefault(tp, 0) + 1
+            newid = m.ID if f is m else "%s_%s_%d" % (m.ID.replace(":","_"),tp,count)
+            # update f, self.idMap
+            if 'ID' in f.attributes: self.idMap[f.ID] = newid
+            f.ID = newid
+        # change Parent refs accordingly
+        for f in feats:
+            if "Parent" in f.attributes:
+                f.Parent = [ self.idMap[pid] for pid in f.Parent ]
 
     # Flushes the current pending queues (pendingMgi and pendingNonMgi)
     # based on the latest feature from the merged stream.
@@ -128,52 +128,52 @@ class ModelMerger:
     # be overlapped by anything following f, and so g can be flushed.
     #
     def flush(self, f=None):
-	flushed = []
-	while len(self.pendingMgi):
-	    m = self.pendingMgi[0]
-	    if f and f.start - m.end < self.windowSize:
-		break
-	    for xr in m.attributes.get("Dbxref",[]):
-	        if xr and xr not in m._merged:
-		    self.log("Dangling reference (%s) in %s\n" % (xr, m.curie))
-	    flushed.append(m)
-	    m.attributes.pop('_merged', None)
-	    self.pendingMgi.pop(0)
+        flushed = []
+        while len(self.pendingMgi):
+            m = self.pendingMgi[0]
+            if f and f.start - m.end < self.windowSize:
+                break
+            for xr in m.attributes.get("Dbxref",[]):
+                if xr and xr not in m._merged:
+                    self.log("Dangling reference (%s) in %s\n" % (xr, m.curie))
+            flushed.append(m)
+            m.attributes.pop('_merged', None)
+            self.pendingMgi.pop(0)
 
-	while len(self.pendingNonMgi):
-	    m = self.pendingNonMgi[0]
-	    if f and f.start - m.end < self.windowSize:
-		break
-	    if len(m.attributes.get("_merged", [])) == 0:
-		self.log("Orphan model: ID=%s curie=%s type=%s\n" % (m.ID, m.curie, m.type))
-	    m.attributes.pop('_merged', None)
-	    self.pendingNonMgi.pop(0)
+        while len(self.pendingNonMgi):
+            m = self.pendingNonMgi[0]
+            if f and f.start - m.end < self.windowSize:
+                break
+            if len(m.attributes.get("_merged", [])) == 0:
+                self.log("Orphan model: ID=%s curie=%s type=%s\n" % (m.ID, m.curie, m.type))
+            m.attributes.pop('_merged', None)
+            self.pendingNonMgi.pop(0)
 
-	for m in flushed:
-	    self.propagatePartIds(m)
-	    self.reassignIDs(m)
+        for m in flushed:
+            self.propagatePartIds(m)
+            self.reassignIDs(m)
 
-	return flushed
+        return flushed
 
     # Adds MGI feature m to the pending queue. Merges in any nonMgi models from the
     # other queue that are referenced in Dbxrefs.
     #
     def addMgi(self, m):
-	m._merged = []
-	self.pendingMgi.append(m)
-	for f in self.pendingNonMgi:
-	    if f.curie in m.attributes.get("Dbxref",[]):
-		self.mergeModels(m, f)
+        m._merged = []
+        self.pendingMgi.append(m)
+        for f in self.pendingNonMgi:
+            if f.curie in m.attributes.get("Dbxref",[]):
+                self.mergeModels(m, f)
 
     # Adds nonMgi model f to the pending queue. Merges f into any MGI feature from the
     # other queue that references f in its Dbxrefs.
     #
     def addNonMgi(self, f):
-	f._merged = []
-	self.pendingNonMgi.append(f)
-	for m in self.pendingMgi:
-	    if f.curie in m.attributes.get("Dbxref",[]):
-		self.mergeModels(m, f)
+        f._merged = []
+        self.pendingNonMgi.append(f)
+        for m in self.pendingMgi:
+            if f.curie in m.attributes.get("Dbxref",[]):
+                self.mergeModels(m, f)
 
     # Hook to do any last checking. 
     # Return m if valid, else None.
@@ -189,19 +189,19 @@ class ModelMerger:
     # their endpoints. 
     #
     def merge(self, files):
-	iters = [gff3.models(x) for x in files]
-	for m in gff3.merge(*iters):
-	    for mm in self.flush(m):
-		if self.validate(mm):
-		    yield mm
-	    if m.source == "MGI":
-		self.addMgi(m)
-	    else:
-		self.addNonMgi(m)
+        iters = [gff3.models(x) for x in files]
+        for m in gff3.merge(*iters):
+            for mm in self.flush(m):
+                if self.validate(mm):
+                    yield mm
+            if m.source == "MGI":
+                self.addMgi(m)
+            else:
+                self.addNonMgi(m)
 
-	for mm in self.flush():
-	    if self.validate(mm):
-	        yield mm
+        for mm in self.flush():
+            if self.validate(mm):
+                yield mm
 
     # end class ModelMerger
 
@@ -210,5 +210,5 @@ class ModelMerger:
 if __name__ == "__main__":
     for m in ModelMerger().merge(sys.argv[1:]):
         for f in gff3.flattenModel2(m):
-	    sys.stdout.write(str(f))
-	sys.stdout.write("###\n")
+            sys.stdout.write(str(f))
+        sys.stdout.write("###\n")

@@ -3,8 +3,9 @@
 set -o pipefail
 
 # ---------------------
-export PYTHON=python
-export PYTHON24="python2.4"
+export PATH="${PATH}:/opt/python3.7/bin"
+# ---------------------
+export PYTHON=python3
 export CURL=curl
 export CP=cp
 export GUNZIP=gunzip
@@ -68,8 +69,8 @@ export COUNTCMD="${PYTHON} ${BIN}/profileGff.py"
 
 # ---------------------
 #
-export NCBIfile=ref_GRCm38.p6_top_level.gff3
-export NCBIurl=ftp://ftp.ncbi.nlm.nih.gov/genomes/Mus_musculus/GFF/${NCBIfile}.gz
+export NCBIfile=GCF_000001635.26_GRCm38.p6_genomic.gff
+export NCBIurl=ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Mus_musculus/latest_assembly_versions/GCF_000001635.26_GRCm38.p6/${NCBIfile}.gz
 export NCBIprep="${PYTHON} ${BIN}/ncbiPrep.py"
 #
 export MIRfile=mmu.gff3
@@ -83,6 +84,9 @@ export ENSEMBLurl=ftp://ftp.ensembl.org/pub/release-${ENSEMBLver}/gff3/mus_muscu
 export ENSEMBLprep="${PYTHON} ${BIN}/ensemblPrep.py"
 #
 export LOGFILE=${WORKINGDIR}/refresh.log
+#
+export SO_URL="http://www.mousemine.org/mousemine/service/query/results?query=%3Cquery+name%3D%22%22+model%3D%22genomic%22+view%3D%22SOTerm.identifier+SOTerm.name%22+longDescription%3D%22%22+sortOrder%3D%22SOTerm.identifier+asc%22%3E%3Cconstraint+path%3D%22SOTerm.obsolete%22+op%3D%22%3D%22+value%3D%22false%22%2F%3E%3C%2Fquery%3E&format=tab"
+export SO_TERM_FILE="${WORKINGDIR}/so_terms.tsv"
 
 # ---------------------
 # Echos its arguments to the log file. Prepends a datetime stamp.
