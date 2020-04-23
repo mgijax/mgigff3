@@ -65,6 +65,14 @@ try \
     25
 
 ###
+try \
+    "Number of features in Mir133b model" \
+    `grep MGI:3618720 ${FILE} | wc -l` \
+    -ge \
+    8
+
+
+###
 #
 if [ $failed -eq 0 ]; then
     logit "PASSED all tests."
