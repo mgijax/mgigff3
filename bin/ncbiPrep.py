@@ -65,7 +65,7 @@ class ConvertNCBI:
         
     def getGeneID(self, f):
         ids = f.attributes.get('Dbxref',[])
-        if type(ids) is bytes:
+        if type(ids) is str:
             ids = [ids]
         for x in ids:
             if x.startswith('GeneID:'):
@@ -129,7 +129,7 @@ class ConvertNCBI:
           return None
         #
         xrs = f.attributes.get('Dbxref', [])
-        if type(xrs) is bytes:
+        if type(xrs) is str:
             xrs = [xrs]
 
         #
@@ -137,7 +137,7 @@ class ConvertNCBI:
         f[1] = "NCBI"
         if "Parent" not in f.attributes:
             # set the curie for top level nodes
-            xrs = filter(lambda x: x.startswith("GeneID:"), xrs)
+            xrs = list(filter(lambda x: x.startswith("GeneID:"), xrs))
             if len(xrs) == 1:
                 f.attributes["curie"] = xrs[0].replace("GeneID:","NCBI_Gene:")
             # set the so_term_name for top level nodes
@@ -207,9 +207,16 @@ class ConvertNCBI:
         
     #
     def checkTranscriptNames(self, m):
-        for f in gff3.flattenModel(m):
-            if len(f.parents) and len(f.children) and "Name" not in f.attributes:
-                f.Name = list(f.parents)[0].curie + "_" + f.type
+            curie = m.curie
+            for f in gff3.flattenModel(m):
+                if len(f.parents) and len(f.children) and "Name" not in f.attributes:
+                    try:
+                        #f.Name = list(f.parents)[0].curie + "_" + f.type
+                        f.Name = curie + "_" + f.type
+                    except:
+                        print("ERROR:", str(f))
+                        print(str(gff3.flattenModel(m)))
+                        sys.exit(-1)
 
     def main(self):
         for m in gff3.models(self.pre(sys.stdin)):

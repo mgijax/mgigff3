@@ -13,7 +13,7 @@ EXCLUDE_TYPES = OrderedSet([
 ])
 
 filtFcn = lambda f: f.type not in EXCLUDE_TYPES
-feats = ifilter(filtFcn, gff3.iterate(sys.stdin))
+feats = filter(filtFcn, gff3.iterate(sys.stdin))
 for m in gff3.models(feats):
     for f in gff3.flattenModel(m):
         #if not f.type in EXCLUDE_TYPES and not f.source in EXCLUDE_SOURCES:
