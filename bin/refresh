@@ -17,6 +17,7 @@ doexome=F
 dodistrib=F
 doagr=F
 donothing=F
+nocounts=F
 
 until [ -z "$1" ]  # Until all parameters used up . . .
 do
@@ -29,6 +30,10 @@ do
 	;;
     -n)
         donothing=T
+	;;
+    -N)
+        nocounts=T
+	nargs=$((nargs-1))
 	;;
     mgi)
 	domgi=T
@@ -159,9 +164,11 @@ function refreshProvider {
 	checkExit
     fi
 
-    logit "Counting $provider downloaded..."
-    ${COUNTCMD} ${downloaded} > ${dprofile} 2>> ${LOGFILE}
-    checkExit
+    if [ ${nocounts} = "F" ]; then
+        logit "Counting $provider downloaded..."
+        ${COUNTCMD} ${downloaded} > ${dprofile} 2>> ${LOGFILE}
+        checkExit
+    fi
 
     logit "Prepping ${provider}..."
     $prepCmd < ${downloaded} > ${prepped} 2>> ${LOGFILE}
@@ -175,9 +182,11 @@ function refreshProvider {
     writeHeader ${provider} ${downloaded} ${url} ${headerfile}
     checkExit
 
-    logit "Counting ${provider} after prep..."
-    ${COUNTCMD} ${splitpattern2} > ${pprofile} 2>> ${LOGFILE}
-    checkExit
+    if [ ${nocounts} = "F" ]; then
+        logit "Counting ${provider} after prep..."
+        ${COUNTCMD} ${splitpattern2} > ${pprofile} 2>> ${LOGFILE}
+        checkExit
+    fi
 
     return 0
 }
