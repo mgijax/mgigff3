@@ -207,19 +207,31 @@ class ConvertNCBI:
         
     #
     def checkTranscriptNames(self, m):
-            curie = m.curie
-            for f in gff3.flattenModel(m):
-                if len(f.parents) and len(f.children) and "Name" not in f.attributes:
-                    try:
-                        #f.Name = list(f.parents)[0].curie + "_" + f.type
-                        f.Name = curie + "_" + f.type
-                    except:
-                        print("ERROR:", str(f))
-                        print(str(gff3.flattenModel(m)))
-                        sys.exit(-1)
+        curie = m.curie
+        for f in gff3.flattenModel(m):
+            if len(f.parents) and len(f.children) and "Name" not in f.attributes:
+                try:
+                    #f.Name = list(f.parents)[0].curie + "_" + f.type
+                    f.Name = curie + "_" + f.type
+                except:
+                    print("ERROR:", str(f))
+                    print(str(gff3.flattenModel(m)))
+                    sys.exit(-1)
 
+    #
+    def checkMiRnas(self, m):
+        if m.attributes.get('so_term_name','') != 'miRNA':
+            return
+        for f in gff3.flattenModel(m):
+            if f.type == 'exon':
+                p = list(f.parents)[0]
+                p.children.remove(f)
+            elif f.type == 'primary_transcript':
+                f.type = 'pre_miRNA'
+    #
     def main(self):
         for m in gff3.models(self.pre(sys.stdin)):
+           self.checkMiRnas(m)
            self.checkPseudogene(m)
            self.checkTranscriptNames(m)
            for f in gff3.flattenModel(m):

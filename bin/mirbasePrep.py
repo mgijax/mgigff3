@@ -49,20 +49,20 @@ for f in gff3.iterate( sys.stdin ):
         #
         # Transcript feature
         #
-        f[2] = 'pre_miRNA' # per AGR
+        f[2] = 'pre_miRNA'
         f.Parent = f.ID
         f.ID = currRoot
         f.transcript_id = f.ID
         sys.stdout.write(str(f))
     elif f[2] == "miRNA": # per AGR
         #
-        # Exon-level feature
+        # miRNA feature
         #
         df = f.Derives_from
         del f.attributes['Derives_from']
         f.ID = i
         f.Parent = df
-        f.exon_id = f.ID
+        f.transcript_id = f.ID
         if df == currRoot:
             sys.stdout.write(str(f))
 
