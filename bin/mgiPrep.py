@@ -14,6 +14,7 @@
 
 import sys
 from lib import mgiadhoc as db
+from lib import gff3
 
 geneModelLdbKeys = '59,60,83' # Ensembl gene model, NCBI gene model, miRBase
 ldbkey2prefix = {
@@ -128,7 +129,7 @@ def main () :
         strand = '.'
       markertype = rec['markertype']
       mcvtype = rec['mcvtype']
-      attrs = [
+      attrs = dict([
         # mint a B6 strain-specific ID from the MGI ID
         ['ID', 'MGI_C57BL6J_' + mgiid[4:]],
         # by convention, GFF3 Name attr is what a browser displays
@@ -140,13 +141,13 @@ def main () :
         # for the Alliance
         ['curie', mgiid],
         # list the model ids
-        ['Dbxref', ','.join(ix[mgiid])],
+        ['Dbxref', ix[mgiid]],
         # what MGI calls it
         ['mgi_type', mcvtype],
         # a bona fide SO term corresponding to mgi_type
         # Throw an error if there is no mapping for this MCV term.
         ['so_term_name', mcv2so[mcvtype]]
-      ]
+      ])
       gffrec = [
         chr,
         'MGI',
@@ -156,7 +157,7 @@ def main () :
         '.',
         strand,
         '.',
-        ''.join([x[0]+'='+x[1]+';' for x in attrs])
+        gff3.formatColumn9(attrs)
       ]
       print('\t'.join(gffrec))
 
