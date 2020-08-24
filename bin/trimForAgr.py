@@ -50,7 +50,7 @@ def processModel (m, soterm2id) :
                 if ltypes and not e.type in ltypes:
                     t.children.remove(e)
                 # (schema-1.0.1.3) Make sure CDS feature has curie-form protein_id
-                if e.type == "CDS":
+                if e.type == "CDS" and "protein_id" in e.attributes:
                     source = "RefSeq" if e.source == "NCBI" else e.source
                     curie = source + ":" + e.attributes["protein_id"]
                     e.attributes["protein_id"] = curie
