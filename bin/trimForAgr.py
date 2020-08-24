@@ -49,15 +49,28 @@ def processModel (m, soterm2id) :
             for e in list(t.children):
                 if ltypes and not e.type in ltypes:
                     t.children.remove(e)
+                # (schema-1.0.1.3) Make sure CDS feature has curie-form protein_id
+                if e.type == "CDS":
+                    source = "RefSeq" if e.source == "NCBI" else e.source
+                    curie = source + ":" + e.attributes["protein_id"]
+                    e.attributes["protein_id"] = curie
+                #
+                e.attributes.pop("transcript_id", None)
+                e.attributes.pop("gene_id", None)
             if len(t.children) == 0 or (ttypes and not t.type in ttypes) or not t.attributes.get("transcript_id", None):
                 m.children.remove(t)
                 log("Removing %s" % str(t))
             else:
                 try:
-                    # special requirements for transcripts for 1.0.1.0
-                    source = "NCBI_Gene" if t.source == "NCBI" else t.source
+                    # Transcripts already have non-curie transcript_id at this point.
+                    #
+                    # (schema-1.0.1.0) Make sure transcripts have curies
+                    source = "RefSeq" if t.source == "NCBI" else t.source
                     curie = source + ":" + t.attributes["transcript_id"]
                     t.attributes["curie"] = curie
+                    # (schema-1.0.1.3) Make sure transcripts have curie-form transcript_id in addition to curie
+                    t.attributes["transcript_id"] = curie
+                    #
                     t.attributes["Dbxref"] = curie
                     t.attributes["Ontology_term"] = soterm2id[t.type]
                     if t.type == "mRNA" and m.attributes["so_term_name"] != "protein_coding_gene" :
@@ -65,6 +78,7 @@ def processModel (m, soterm2id) :
                         log("WARNING: Changing gene to protein coding because mRNA detected: %s %s" % (m.ID, m.attributes["Name"]))
                         m.attributes["so_term_name"] = "protein_coding_gene"
                         m.attributes["Ontology_term"] = "SO:0001217"
+                    t.attributes.pop("gene_id", None)
                 except KeyError:
                     log("KeyError (%s) for transcript: %s" % (sys.exc_info()[1],str(t)))
                     m.children.remove(t)
@@ -76,11 +90,10 @@ def processModel (m, soterm2id) :
         sys.stdout.write(str(m))
 
 ###
-def writeHeader (timestamp, build) :
+def writeHeader (attrs) :
     sys.stdout.write(gff3.HEADER)
-    sys.stdout.write("#!data-source MGI\n")
-    sys.stdout.write("#!date-produced %s\n" % timestamp)
-    sys.stdout.write("#!assembly %s\n" % build)
+    for (n,v) in attrs:
+        sys.stdout.write("#!%s %s\n" % (n, v))
 
 ###
 def main ():
@@ -88,7 +101,13 @@ def main ():
     #
     soterm2id = loadSOTerms()
     #
-    writeHeader(time.asctime(), os.environ["ENSEMBLbuild"])
+    writeHeader([
+        ('data-source', 'MGI'),
+        ('date-produced', time.asctime()),
+        ('assembly', os.environ["ENSEMBLbuild"]),
+        ('annotationSource RefSeq', os.environ["NCBIver"]),
+        ('annotationSource ENSEMBL', os.environ["ENSEMBLver"]),
+        ])
     #
     for m in gff3.models(sys.stdin):
         processModel(m, soterm2id)
