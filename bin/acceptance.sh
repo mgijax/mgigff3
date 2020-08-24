@@ -60,14 +60,14 @@ try \
 ###
 try \
     "Number of features in Bmp4 model" \
-    `grep MGI:88180 ${FILE} | wc -l` \
+    `grep MGI_C57BL6J_88180 ${FILE} | wc -l` \
     -gt \
     25
 
 ###
 try \
     "Number of features in Mir133b model" \
-    `grep MGI:3618720 ${FILE} | wc -l` \
+    `grep MGI_C57BL6J_3618720 ${FILE} | wc -l` \
     -ge \
     8
 
