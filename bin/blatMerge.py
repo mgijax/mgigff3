@@ -160,7 +160,10 @@ class MgiComputedMerger:
 
     def output (self) :
         def topLevelKey (fs) :
-            return (fs[0].seqid, fs[0].start)
+            s = fs[0].seqid
+            if len(s) == 1 and s.isdigit():
+                s = "0" + s
+            return (s, fs[0].start)
         allFeats = list(self.mgi2feats.values())
         allFeats.sort(key=topLevelKey)
         for feats in allFeats:
@@ -173,6 +176,7 @@ class MgiComputedMerger:
                 model += gff3.flattenModel(m)
             for f in model:
                 sys.stdout.write(str(f))
+            sys.stdout.write("###\n")
 
     def main(self):
         self.loadSeqidFile()

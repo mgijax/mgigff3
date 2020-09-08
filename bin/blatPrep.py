@@ -19,29 +19,18 @@
 #       mcvtype The gene's MCV type
 #       sotype  The gene's SO type
 
+import sys
 from lib import mgiadhoc as db
 
 geneModelLdbKeys = '59,60,83,85'
 
-genesWithModels = '''
-  SELECT distinct m._marker_key
-  FROM MRK_Marker m, ACC_Accession a
-  WHERE m._marker_status_key = 1
-  AND m._organism_key = 1
-  AND m._marker_type_key = 1
-  AND m._marker_key = a._object_key
-  AND a._mgitype_key = 2
-  AND a._logicaldb_key in (%s)
-  ''' % geneModelLdbKeys
-
-genesWithoutModels = '''
+genes = '''
   SELECT m._marker_key
   FROM MRK_Marker m
   WHERE m._marker_status_key = 1
   AND m._organism_key = 1
   AND m._marker_type_key = 1
-  AND m._marker_key not in (%s)
-  ''' % genesWithModels
+  '''
 
 seqsWithOneGene = '''
   SELECT _sequence_key
@@ -68,7 +57,7 @@ gwomSequences = '''
   AND s._sequence_key in (%s)
   /* RNA or DNA <= 10kb in len */
   AND (s._sequencetype_key = 316346 OR (s._sequencetype_key = 316347 AND s.length <= 10000))
-  ''' % (genesWithoutModels, seqsWithOneGene)
+  ''' % (genes, seqsWithOneGene)
 
 
 typemap = {
@@ -86,7 +75,11 @@ typemap = {
   'sense intronic lncRNA gene' : 'lncRNA_gene',
 }
 
+genesWithModels = set([ mid.strip() for mid in sys.stdin ])
+
 for r in db.sql(gwomSequences):
+    if r["markerid"] in genesWithModels:
+        continue
     mcvtype = r["mcv_type"]
     sotype  = typemap.get(mcvtype, mcvtype)
     line = [

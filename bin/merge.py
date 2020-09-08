@@ -24,20 +24,15 @@ WINDOWSIZE = 200000
 class ModelMerger:
     def __init__(self, wsize=WINDOWSIZE):
         self.idMaker = gff3.IdMaker()
-        self.pendingMgi = []
-        self.pendingNonMgi = []
+        self.seqid = None
+        self.window = []
+        self.outputMgi = set()
         self.windowSize = wsize
 
     # Message logger
     #
     def log(self, m):
         sys.stderr.write(m)
-
-    # Prints a model to standard out. 
-    #
-    def printModel(self, feats):
-        for f in feats:
-            sys.stdout.write(str(f))
 
     # Propagates each gene_id to all features in the gene.
     # Propagates transcript_id to all features in the transcript.
@@ -54,42 +49,6 @@ class ModelMerger:
                 if tid:
                     e.transcript_id = tid
 
-    # Merges model f into m. f is the root of a gene model from some provider. 
-    # m is the MGI feature and is the root of a merged model hierarchy that
-    # grows as models from multiple providers are merged. At this point, merging
-    # is pretty tame - the root features of the providers' models are merged into the
-    # mgi root feature, and the descendant trees from the provider model are grafted onto
-    # the growing mgi tree.
-    #
-    # The model hierarchy under f is copied into m, rather than moved, because
-    # of complex (non 1-1) associations among models. (I.e., f may be merged
-    # into more than one m).
-    #
-    # Merging a gene with a pseudogene causes the addition of a biotypeConflict attribute.
-    #
-    def mergeModels(self, m, f):
-        if (m.strand == '.') :
-          self.log("Assigning strand to MGI feature from model: %s %s(%s)\n" % (m.ID, f.ID, f.strand))
-          m.strand = f.strand
-        elif (m.strand != f.strand) :
-          self.log("Cannot merge models because strands do not match: %s(%s) %s(%s)\n" % (m.ID, m.strand, f.ID, f.strand))
-          return
-        m.start = min(m.start, f.start)
-        m.end   = max(m.end,   f.end)
-        feats = gff3.copyModel(gff3.flattenModel(f))
-        #
-        if ("pseudo" in m.type and "pseudo" not in f.type) \
-        or ("pseudo" not in m.type and "pseudo" in f.type): 
-            m.biotypeConflict = "true"
-        #
-        f._merged.append(m.curie)
-        m._merged.append(f.curie)
-        for c in feats[0].children:
-            c.Parent=[m.ID]
-            c.parents.clear()
-            c.parents.add(m)
-            m.children.add(c)
-        return
     #
     def reassignIDs(self, m):
         self.idMap = {}
@@ -116,70 +75,127 @@ class ModelMerger:
             if "Parent" in f.attributes:
                 f.Parent = [ self.idMap[pid] for pid in f.Parent ]
 
-    # Flushes the current pending queues (pendingMgi and pendingNonMgi)
-    # based on the latest feature from the merged stream.
-    # Returns the flushed items from the pendingMgi queue, i.e., the root
-    # features of the flushed models.
-    #
-    # Flushing depends on the fact the file is (roughly) sorted by increasing
-    # start position of the features. As each feature f is read from the input,
-    # the cache is scanned to see what can be flushed. For a given feature g in
-    # the cache, if g.end < f.start, then g is not overlapped by f and cannot
-    # be overlapped by anything following f, and so g can be flushed.
     #
     def flush(self, f=None):
         flushed = []
-        while len(self.pendingMgi):
-            m = self.pendingMgi[0]
-            if f and f.start - m.end < self.windowSize:
+        while len(self.window):
+            m = self.window[0]
+            if f and f.seqid == m.seqid and f.start - m.end < self.windowSize:
                 break
-            for xr in m.attributes.get("Dbxref",[]):
-                if xr and xr not in m._merged:
-                    self.log("Dangling reference (%s) in %s\n" % (xr, m.curie))
             flushed.append(m)
-            m.attributes.pop('_merged', None)
-            self.pendingMgi.pop(0)
-
-        while len(self.pendingNonMgi):
-            m = self.pendingNonMgi[0]
-            if f and f.start - m.end < self.windowSize:
-                break
-            if len(m.attributes.get("_merged", [])) == 0:
-                self.log("Orphan model: ID=%s curie=%s type=%s\n" % (m.ID, m.curie, m.type))
-            m.attributes.pop('_merged', None)
-            self.pendingNonMgi.pop(0)
+            self.window.pop(0)
 
         for m in flushed:
             self.propagatePartIds(m)
             self.reassignIDs(m)
+            self.outputMgi.add(m.curie)
+            for xr in m.Dbxref:
+                if xr not in m._merged:
+                    self.log("Dangling xref %s in gene %s\n" % (xr, m.curie))
+            m.attributes.pop("_merged", None)
 
         return flushed
 
-    # Adds MGI feature m to the pending queue. Merges in any nonMgi models from the
-    # other queue that are referenced in Dbxrefs.
-    #
-    def addMgi(self, m):
-        m._merged = []
-        self.pendingMgi.append(m)
-        for f in self.pendingNonMgi:
-            if f.curie in m.attributes.get("Dbxref",[]):
-                self.mergeModels(m, f)
+    # Initializes a model for the current window. Injects MGI gene information into 
+    # the root nodes of a provider model.
+    def initModel (self, m, mgiGene):
+        g = mgiGene
+        #
+        m = gff3.copyModel(gff3.flattenModel(m))[0]
+        if m.seqid != mgiGene.seqid:
+            self.log("Warning: chromosome mismatch: Gene=%s, MGI chr=%s, %s chr=%s\n" % (g.curie, g.seqid, m.source, m.seqid))
+        #
+        self.seqid = m.seqid
 
-    # Adds nonMgi model f to the pending queue. Merges f into any MGI feature from the
-    # other queue that references f in its Dbxrefs.
-    #
-    def addNonMgi(self, f):
-        f._merged = []
-        self.pendingNonMgi.append(f)
-        for m in self.pendingMgi:
-            if f.curie in m.attributes.get("Dbxref",[]):
-                self.mergeModels(m, f)
-
-    # Hook to do any last checking. 
-    # Return m if valid, else None.
-    #
-    def validate(self, m):
+        # process type
+        m.source = "MGI"
+        m.type = mgiGene.type
+        
+        # save orig attributes
+        ma = m.attributes
+        # replace with mgiGene attributes
+        m.attributes = {}
+        m.attributes.update(mgiGene.attributes)
+        # restore children
+        # for each child, fix Parent attribute
+        for mc in m.children:
+            mc.Parent = [ m.ID ]
+        # Keep track of provider IDs that have been merged into this gene
+        m._merged = [ ma["curie"] ]
         return m
+
+    # Merges model f into m. f is the root of a gene model from some provider. 
+    # m is the MGI feature and is the root of a merged model hierarchy that
+    # grows as models from multiple providers are merged. 
+    # The root features of the providers' models are merged into the
+    # mgi root feature, and the descendant trees from the provider model are grafted onto
+    # the growing mgi tree.
+    #
+    # The model hierarchy under f is copied into m, rather than moved, because
+    # of complex (non 1-1) associations among models. (I.e., f may be merged
+    # into more than one m).
+    #
+    # Merging a gene with a pseudogene causes the addition of a biotypeConflict attribute.
+    #
+    def mergeModel(self, m, f):
+        # sanity checks:
+        if m.seqid != f.seqid or m.strand != f.strand:
+            self.log("Cannot merge because chromosomes or strands disagree.\n%s\n%s\n" % (str(m), str(f)))
+            return m
+        m.start = min(m.start, f.start)
+        m.end   = max(m.end,   f.end)
+        feats = gff3.copyModel(gff3.flattenModel(f))
+        #
+        if ("pseudo" in m.type and "pseudo" not in f.type) \
+        or ("pseudo" not in m.type and "pseudo" in f.type): 
+            m.biotypeConflict = "true"
+        #
+        for c in feats[0].children:
+            c.Parent=[m.ID]
+            c.parents.clear()
+            c.parents.add(m)
+            m.children.add(c)
+        #
+        m._merged.append(f.curie)
+        return m
+
+    # processNext (nonMgi) model m.
+    # One of 4 outcomes:
+    #   1. m has no matching MGI gene, and gets kicks out and logged.
+    #   2. The matching MGI gene has already been output. This gets kicked out and logged.
+    #   3. The matching MGI gene is in the current window. Model m is merged.
+    #   4. The matching MGI gene is not in the window and has not been seen. Initialize new model 
+    #      in window for MGI gene + model m.
+    #
+    def processNext(self, m):
+        gs  = self.id2mgiFeat.get(m.curie, None)
+        if gs is None:
+            self.log("Orphan model: %s \n" % str(m.curie))
+            return
+        for g in gs:
+            if g.curie in self.outputMgi:
+                self.log("MGI gene has already been output: " + str(g))
+                self.log("Detected at: " + str(m))
+                return
+            for mm in self.window:
+                if mm.curie == g.curie:
+                    self.mergeModel(mm, m)
+                    break
+            else:
+               self.window.append(self.initModel(m, g))
+
+    #
+    def loadMgiData (self, mgiFile) :
+        self.mgiFeats = []
+        self.id2mgiFeat = {}
+        for f in gff3.iterate(mgiFile):
+            self.mgiFeats.append(f)
+            for xref in f[8].get('Dbxref',[]):
+                if xref in self.id2mgiFeat:
+                    self.log("WARNING: ID %s associated with multiple genes.\n" % xref)
+                    self.id2mgiFeat[xref].append(f)
+                else:
+                    self.id2mgiFeat[xref] = [f]
 
     # Merges the sorted gff files listed on the command line into a single stream,
     # then merges features based on Dbxrefs. Maintains a kind of moving window in the
@@ -188,27 +204,33 @@ class ModelMerger:
     # current position (start coordinate of the latest input feature) moves beyond 
     # their endpoints. 
     #
-    def merge(self, files):
-        iters = [gff3.models(x) for x in files]
+    def merge(self, mgiFile, providerFiles):
+        self.loadMgiData(mgiFile)
+        iters = [gff3.models(x) for x in providerFiles]
         for m in gff3.merge(*iters):
             for mm in self.flush(m):
-                if self.validate(mm):
-                    yield mm
-            if m.source == "MGI":
-                self.addMgi(m)
-            else:
-                self.addNonMgi(m)
-
-        for mm in self.flush():
-            if self.validate(mm):
                 yield mm
+            self.processNext(m)
+        #
+        for mm in self.flush():
+            yield mm
+        #
+        self.finalCheck()
 
+    #
+    def finalCheck (self) :
+        chrFeats = filter(lambda f: f.seqid == self.seqid, self.mgiFeats)
+        missingChrFeats = filter(lambda f: f.curie not in self.outputMgi, chrFeats)
+        for f in missingChrFeats:
+            self.log("Missing: " + str(f))
+        
     # end class ModelMerger
 
 #####
 
 if __name__ == "__main__":
-    for m in ModelMerger().merge(sys.argv[1:]):
+    merger = ModelMerger()
+    for m in merger.merge(sys.argv[1], sys.argv[2:]):
         for f in gff3.flattenModel2(m):
             sys.stdout.write(str(f))
         sys.stdout.write("###\n")

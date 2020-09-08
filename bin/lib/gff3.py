@@ -256,7 +256,7 @@ class Feature(list):
 #       lines at the top of the file as the first element in the iteration.
 #       Default is False (first element is first feature or group).
 #
-def iterate(source, returnGroups=False, returnHeader=False):
+def iterate(source, returnGroups=False, returnHeader=False, returnSeparators=False):
     #
     # Set up the input
     #
@@ -280,8 +280,12 @@ def iterate(source, returnGroups=False, returnHeader=False):
                 header.append(line)
             elif returnGroups and line == GROUPSEP and len(group) > 0:
                 yield group
+                if returnSeparators:
+                    yield GROUPSEP
                 group = []
             else:
+                if returnSeparators and line == GROUPSEP:
+                    yield GROUPSEP
                 continue
         else:
             if header is not None:
@@ -298,6 +302,8 @@ def iterate(source, returnGroups=False, returnHeader=False):
 
     if returnGroups and len(group) > 0:
         yield group
+        if returnSeparators:
+            yield GROUPSEP
         group = []
 
     #
@@ -493,7 +499,11 @@ class IdMaker:
 #
 def splitFile(features, directory, fileTemplate):
     c2file = {}
-    for f in iterate(features):
+    lastFd = None
+    for f in iterate(features, returnSeparators=True):
+        if f == GROUPSEP:
+            lastFd.write(GROUPSEP)
+            continue
         c = f.seqid
         fd = c2file.get(c, None)
         if not fd:
@@ -501,6 +511,7 @@ def splitFile(features, directory, fileTemplate):
             fd = open(fileName, 'w')
             c2file[c] = fd
         fd.write(str(f))
+        lastFd = fd
 
     for (c,fd) in list(c2file.items()):
         fd.close()

@@ -99,6 +99,10 @@ ${MKDIR} -p ${ANNUALDIR}
 ########
 # truncate log file
 > ${LOGFILE}
+##
+if [ $nargs -eq 0 ]; then
+   rm -fr ${WORKINGDIR}/*
+fi
 #
 logit "================================================================================="
 logit "This is the MGI GFF3 pipeline."
@@ -199,8 +203,6 @@ if [ $nargs -eq 0 -o $domgi == T ]; then
     logit "Prepping mgi ..."
     ${PYTHON} ${BIN}/mgiPrep.py 2>> ${LOGFILE} > ${WORKINGDIR}/mgi.gff
     checkExit
-    ${SPLITCMD} -t "mgi.chr%s.gff" < ${WORKINGDIR}/mgi.gff
-    checkExit
     #
     logit "Downloading SO terms..."
     ${CURL} "${SO_URL}" 2>> ${LOGFILE} > ${SO_TERM_FILE}
@@ -231,26 +233,7 @@ END1
     checkExit
 
     logit "Counting mgi features..."
-    ${COUNTCMD} ${WORKINGDIR}/mgi.chr*.gff > ${WORKINGDIR}/mgi.counts.txt
-    checkExit
-fi
-
-########
-# BLAT models
-if [ $nargs -eq 0 -o $doblat == T ]; then
-    # Computes Blat'ed models for MGI genes that don't have models but do have good enough
-    # sequences. The sequences are blatted against the mouse genome, and the best scoring
-    # hits are made into models. 
-    logit "Generating blat models..."
-    ${BIN}/blatRefresh 2>> ${LOGFILE} > ${WORKINGDIR}/blat.gff
-    checkExit
-    
-    logit "Splitting blat output..."
-    ${SPLITCMD} -t "blat.chr%s.gff" < ${WORKINGDIR}/blat.gff
-    checkExit
-
-    logit "Counting blat models ..."
-    ${COUNTCMD} ${WORKINGDIR}/blat.chr*.gff > ${WORKINGDIR}/blat.counts.txt
+    ${COUNTCMD} ${WORKINGDIR}/mgi.gff > ${WORKINGDIR}/mgi.counts.txt
     checkExit
 fi
 
@@ -272,26 +255,47 @@ if [ $nargs -eq 0 -o $doensembl == T ]; then
 fi
 
 ########
-# MERGE phase
+# MERGE phase for provider models. Merges models for same gene from different provider.
 if [ $nargs -eq 0 -o $domerge == T ]; then
     for i in "${CHRS[@]}"
     do : 
 	logit
 	logit "Merging chr${i}..."
-	logit "${PYTHON} ${BIN}/merge.py ${WORKINGDIR}/*.chr${i}.gff > ${WORKINGDIR}/chr${i}.gff 2>> ${LOGFILE}"
-	${PYTHON} ${BIN}/merge.py ${WORKINGDIR}/*.chr${i}.gff > ${WORKINGDIR}/chr${i}.gff 2>> ${LOGFILE}
+	logit "${PYTHON} ${BIN}/merge.py ${WORKINGDIR}/mgi.gff ${WORKINGDIR}/*.chr${i}.gff > ${WORKINGDIR}/chr${i}.gff 2>> ${LOGFILE}"
+	${PYTHON} ${BIN}/merge.py ${WORKINGDIR}/mgi.gff ${WORKINGDIR}/*.chr${i}.gff > ${WORKINGDIR}/chr${i}.gff 2>> ${LOGFILE}
 	checkExit
     done
+fi
+
+########
+# BLAT models. Must run after all provider data has been processed so that we know
+# who got a model and who didn't.
+if [ $nargs -eq 0 -o $doblat == T ]; then
+    # Computes Blat'ed models for MGI genes that don't have models but do have good enough
+    # sequences. The sequences are blatted against the mouse genome, and the best scoring
+    # hits are made into models. 
+    logit "Generating blat models..."
+    ${BIN}/blatRefresh 2>> ${LOGFILE} > ${WORKINGDIR}/blat.gff
+    checkExit
 fi
 
 ########
 # Concatenation phase
 if [ $nargs -eq 0 -o $docat == T ]; then
     logit "Catting files..."
+
+    # start with header lines for MGI.gff3
     echo '##gff-version 3' > ${WORKINGDIR}/MGI.gff3
     cat ${WORKINGDIR}/*.header >> ${WORKINGDIR}/MGI.gff3 2>> ${LOGFILE}
-    cat ${WORKINGDIR}/chr*.gff >> ${WORKINGDIR}/MGI.gff3 2>> ${LOGFILE}
 
+    # cat chr*.gff files for provider models
+    files=`ls ${WORKINGDIR}/chr*.gff | sort -V` 
+    logit "cat ${files}"
+    cat ${files} > ${WORKINGDIR}/provider.gff 2>> ${LOGFILE}
+
+    # Merge provider and blatted models
+    ${PYTHON} ${BIN}/gffMerge.py ${WORKINGDIR}/provider.gff ${WORKINGDIR}/blat.gff >> ${WORKINGDIR}/MGI.gff3
+    
     logit "Running acceptance tests..."
     ${BIN}/acceptance.sh ${WORKINGDIR}/MGI.gff3 2>> ${LOGFILE}
     checkExit
