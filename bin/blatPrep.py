@@ -1,5 +1,5 @@
 #
-# prepMgiComputed.py
+# blatPrep.py
 #
 # Outputs sequence IDs for genes that do not have associated gene models.
 #
@@ -22,14 +22,15 @@
 import sys
 from lib import mgiadhoc as db
 
-geneModelLdbKeys = '59,60,83,85'
-
 genes = '''
   SELECT m._marker_key
-  FROM MRK_Marker m
+  FROM MRK_Marker m, MRK_MCV_Cache mcv
   WHERE m._marker_status_key = 1
   AND m._organism_key = 1
-  AND m._marker_type_key = 1
+  AND m._marker_type_key in (1,7)
+  AND m._marker_key = mcv._marker_key
+  AND mcv.qualifier = 'D'
+  AND mcv.term not in ('miRNA gene', 'tRNA gene')
   '''
 
 seqsWithOneGene = '''

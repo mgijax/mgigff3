@@ -85,8 +85,6 @@ if [ $donothing == T ]; then
     exit 0
 fi
 
-# ---------------------
-${TOUCH} ${LOGFILE}
 
 # ---------------------
 ${MKDIR} -p ${DATADIR}
@@ -99,6 +97,7 @@ ${MKDIR} -p ${ANNUALDIR}
 ########
 # truncate log file
 > ${LOGFILE}
+
 ##
 if [ $nargs -eq 0 ]; then
    rm -fr ${WORKINGDIR}/*
