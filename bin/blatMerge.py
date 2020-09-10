@@ -43,7 +43,7 @@ class MgiComputedMerger:
                 feat = gff3.Feature()
                 feat.ID = mgiid.replace('MGI:', 'MGI_C57BL6J_')
                 feat.source = "MGI"
-                feat.type = "gene"      # FIXME
+                feat.type = "pseudogene" if mgi_type == "pseudogene" else "gene"
                 feat.curie = mgiid
                 feat.Name = symbol
                 feat.description = name
@@ -83,7 +83,10 @@ class MgiComputedMerger:
                 self.logRejects("REJECTING SEQUENCES for GENE (%s) - multiple matches per sequence: %s" % (mgiid, set([ m.qName for m in multiples ])))
             # if no single matches, reject the gene
             if len(singles) == 0:
-                self.logRejects("REJECTING GENE (%s) - No unique matches." % mgiid)
+                if len(multiples):
+                    self.logRejects("REJECTING GENE (%s) - Only nonunique matches." % mgiid)
+                else:
+                    self.logRejects("REJECTING GENE (%s) - No matches." % mgiid)
                 mf._rejected = True
                 continue
             # tweak the models
