@@ -22,6 +22,8 @@
 import sys
 from lib import mgiadhoc as db
 
+# Genes and pseudogenes.
+# Exclude miRNA and tRNA genes.
 genes = '''
   SELECT m._marker_key
   FROM MRK_Marker m, MRK_MCV_Cache mcv
@@ -33,6 +35,7 @@ genes = '''
   AND mcv.term not in ('miRNA gene', 'tRNA gene')
   '''
 
+# Sequences in MGI associated with exactly one gene
 seqsWithOneGene = '''
   SELECT _sequence_key
   FROM SEQ_Marker_Cache
@@ -40,9 +43,27 @@ seqsWithOneGene = '''
   HAVING count(*) = 1
   '''
 
-gwomSequences = '''
-  SELECT distinct c.accid as sequenceid, st.term as seq_type, s.division, a.accid as markerid, m.symbol, m.name, v.term as mcv_type
-  FROM SEQ_Marker_Cache c, SEQ_Sequence s, ACC_Accession a, MRK_Marker m, MRK_MCV_Cache v, VOC_Term st
+# All qualified sequences in MGI
+# - associated with exactly one gene (gene or pseudogene, no miRNA, no tRNA)
+# - type = DNA or RNA
+# - logical db = Genbank or RefSeq
+# - if type = DNA, then length <= 10 kb
+sequences = '''
+  SELECT distinct
+      c.accid as sequenceid,
+      st.term as seq_type,
+      s.division,
+      a.accid as markerid,
+      m.symbol,
+      m.name,
+      v.term as mcv_type
+  FROM
+      SEQ_Marker_Cache c,
+      SEQ_Sequence s,
+      ACC_Accession a,
+      MRK_Marker m,
+      MRK_MCV_Cache v,
+      VOC_Term st
   WHERE c._sequence_key = s._sequence_key
   AND c._LogicalDB_key in (9,27)
   AND c._marker_key in (%s)
@@ -78,7 +99,7 @@ typemap = {
 
 genesWithModels = set([ mid.strip() for mid in sys.stdin ])
 
-for r in db.sql(gwomSequences):
+for r in db.sql(sequences):
     if r["markerid"] in genesWithModels:
         continue
     mcvtype = r["mcv_type"]

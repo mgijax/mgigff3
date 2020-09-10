@@ -28,7 +28,7 @@ for m in gff3.models(feats):
         biotype = f.attributes.get("biotype", None)
         if biotype and len(f.parents) == 0:
             if biotype == "protein_coding":
-                biotype += "_gene"
+                biotype = "protein_coding_gene"
             f.attributes["so_term_name"] = biotype
         f.attributes.pop("biotype", None)
         f.attributes.pop("version", None)

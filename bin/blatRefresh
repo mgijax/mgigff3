@@ -2,30 +2,29 @@
 #
 # refreshMgiComputed.sh
 #
-# For the MGI genes that don't have a gene model from a provider, generates compted models
+# For the MGI genes that don't have a gene model from a provider, generates computed models
 # using Blat on selected sequences for the gene.
 #
 # Writes to models to stdout.
-# 
 #
-# 0. To determine which genes have models, grep for MGI ids in the processed provider files.
+# 1. To determine which genes have models, grep for MGI ids in the processed provider files.
 #       This contrasts with the previous method, which queried the database for anything with
 #       a provider ID. The problem with that approach is that genes can slip through the cracks:
 #       a gene may have a provider ID, but that ID is not present in the provider data. As a result,
 #       that gene ends up with no provider model, and no blatted model.
-#    
-# 1. Finding "good enough" sequences for each gene
-#	1a. Query MGI for the genes wihtout models and their qualifying seuqnece IDs
-#	1b. Download the sequences from NCBI into a fasta file.
-# 2. Blatting those sequences against the mouse genome
-# 3. Filtering the blat results. 
-#	3a. Only sequences with a single match across the genome 
-#	3b. Only matches meeting %length and %identity thresholds
-# 4. Turning the blat match results into little models
-#	4a. Merges the MGI data from 1a with the filtered blat results from 3b
-#	4b. Creates models with the structure: gene -> match -> match_part
-# 5. Writing the results to GFF3 file
-#
+# 2. Find "good enough" sequences for each gene
+#	2a. Query MGI for all genes and their qualified sequences
+#       2b. Filter results by removing genes that received models in part 1. This leaves the
+#           genes that need to get models via blat.
+#	2c. Download the sequences from NCBI into a fasta file.
+# 3. Blat those sequences against the mouse genome -> .psl file
+# 4. Filter the blat results. 
+#	4a. Only sequences with a single match across the genome 
+#	4b. Only matches meeting %length and %identity thresholds
+# 5. Turn the blat match results into GFF3 models
+#	5a. Merge the MGI data from 2b with the filtered blat results from 4b
+#	5b. Create models with the structure: gene -> match -> match_part
+# 6. Write the results to GFF3 file
 #
 
 source ${DIR}/bin/config.sh
