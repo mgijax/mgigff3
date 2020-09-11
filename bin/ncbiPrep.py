@@ -62,6 +62,7 @@ class ConvertNCBI:
         self.currentRegionId = None
         self.currentRegion = None
         self.transcriptCount = 0
+        self.exonCount = 0
         
     def getGeneID(self, f):
         ids = f.attributes.get('Dbxref',[])
@@ -181,13 +182,14 @@ class ConvertNCBI:
     def log(self, s):
         sys.stderr.write(s)
 
-    # NCBI provides 2-level pseudogenes. We need 3-levels. 
-    # Checks the provided model to see if it's a pseudogene with
-    # only exon children. If so, it inserts a pseudogenic_transcript
-    # in between.
+    # NCBI provides 1- and 2-level pseudogenes. We need 3-levels. 
+    # Checks the provided model to see if it's a pseudogene with no or
+    # only exon children. For 2 level models, (pseudogene->exon) insert
+    # pseudogenic transcript. For 1 level model, adds pseudogenic
+    # transcript and exon. Always results in 3 level model.
     #
     def checkPseudogene(self, m):
-        if not m.type == "pseudogene" or len(m.children) == 0:
+        if not m.type == "pseudogene":
             return
         for c in m.children:
             if c.type != "exon":
@@ -200,10 +202,22 @@ class ConvertNCBI:
         t.ID = "inserted_transcript_%d" % self.transcriptCount
         t.type = "pseudogenic_transcript"
         t.Parent = [ m.ID ]
-        for c in m.children:
-            c.Parent = [ t.ID ]
-            c.type = "pseudogenic_exon"
-        gff3.crossReference([m, t] + list(m.children))
+        if len(m.children) > 0:
+            # convert 2 level model by inserting a transcript
+            for c in m.children:
+                c.Parent = [ t.ID ]
+                c.type = "pseudogenic_exon"
+            gff3.crossReference([m, t] + list(m.children))
+        else:
+            # convert a 1-level model by appending a transcript and an exon
+            self.exonCount += 1
+            e = gff3.Feature(t)
+            e.ID = "inserted_exon_%d" % self.exonCount
+            e.type = "pseudogenic_exon"
+            e.Parent = [t.ID]
+            gff3.crossReference([m, t, e])
+            self.log("Created exon " + e.ID + "\n")
+
         
     #
     def checkTranscriptNames(self, m):
