@@ -29,6 +29,9 @@
 
 source ${DIR}/bin/config.sh
 
+BLAT_OFILE=$1
+C4AM_OFILE=$2
+
 # 0. Get list of MGI ids that have been assigned models so far:
 grep -v "#" ${WORKINGDIR}/chr*.gff | grep -v Parent | sed "s/.*curie=\(MGI:[0-9]*\).*/\1/" | sort > ${WORKINGDIR}/genesWithModels.txt
 ngwm=`wc -l ${WORKINGDIR}/genesWithModels.txt`
@@ -43,13 +46,13 @@ checkExit
 # this gets the sequences from ncbi and writes to a fasta file
 nseqids=`wc -l ${WORKINGDIR}/blat.seqids.txt`
 logit "Blat models: retrieving ${nseqids} sequences from NCBI..."
-${CUT} -f 1  ${WORKINGDIR}/blat.seqids.txt | ${PYTHON} ${BIN}/seqid2fa.py - ${WORKINGDIR}/blat.seqs.fa
+#####${CUT} -f 1  ${WORKINGDIR}/blat.seqids.txt | ${PYTHON} ${BIN}/seqid2fa.py - ${WORKINGDIR}/blat.seqs.fa
 checkExit
 
 # 2b. Blat the sequences against the mouse genome assembly
 nseqs=`grep "^>" ${WORKINGDIR}/blat.seqs.fa | wc -l`
 logit "Blat models: Blat'ing ${nseqs} sequences..."
-${GFCLIENT} ${BLAT_ARGS} ${BLAT_HOST} ${BLAT_PORT} / ${WORKINGDIR}/blat.seqs.fa ${WORKINGDIR}/blat.gfclient.psl >> ${LOGFILE} 2>&1
+#####${GFCLIENT} ${BLAT_ARGS} ${BLAT_HOST} ${BLAT_PORT} / ${WORKINGDIR}/blat.seqs.fa ${WORKINGDIR}/blat.gfclient.psl >> ${LOGFILE} 2>&1
 checkExit
 
 # 3a. Use pslreps to filter the results to single best hits
@@ -58,9 +61,14 @@ ${PSLREPS} ${PSLREPS_ARGS} ${WORKINGDIR}/blat.gfclient.psl ${WORKINGDIR}/blat.ps
 checkExit
 
 # 3b. Convert the alignments to GFF3 hierarchies and attach the corresponding MGI id
-# Sends results to standard out. (The caller redirects to a .gff file.)
+# Send results to GFF file specified on command line
 logit "Blat models: Generating models..."
-${PYTHON} ${BIN}/blatMerge.py ${WORKINGDIR}/blat.pslreps.psl ${WORKINGDIR}/blat.seqids.txt 
+${PYTHON} ${BIN}/blatMerge.py ${WORKINGDIR}/blat.pslreps.psl ${WORKINGDIR}/blat.seqids.txt > ${BLAT_OFILE}
+checkExit
+
+# 3c. Generates file to use as input to the C4AM load
+logit "Blat models: Generating C4AM file..."
+${PYTHON} ${BIN}/gff2c4am.py < ${BLAT_OFILE} > ${C4AM_OFILE}
 checkExit
 
 logit "Blat models: finished."

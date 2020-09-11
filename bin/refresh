@@ -278,7 +278,7 @@ if [ $nargs -eq 0 -o $doblat == T ]; then
     # sequences. The sequences are blatted against the mouse genome, and the best scoring
     # hits are made into models. 
     logit "Generating blat models..."
-    ${BIN}/blatRefresh 2>> ${LOGFILE} > ${WORKINGDIR}/blat.gff
+    ${BIN}/blatRefresh ${WORKINGDIR}/blat.gff ${WORKINGDIR}/blat.c4am.tsv 2>> ${LOGFILE}
     checkExit
 fi
 
