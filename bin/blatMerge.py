@@ -45,6 +45,7 @@ class MgiComputedMerger:
                 feat.source = "MGI"
                 feat.type = "pseudogene" if mgi_type == "pseudogene" else "gene"
                 feat.curie = mgiid
+                feat.gene_id = mgiid
                 feat.Name = symbol
                 feat.description = name
                 feat.mgi_type = mgi_type
