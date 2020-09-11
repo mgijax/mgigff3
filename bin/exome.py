@@ -2,6 +2,9 @@
 # exome.py
 #
 # Post process mgi gff file to produce mgi exome file.
+# Reads from stdin, writes to stdout.
+# Example:
+#       cat MGI.gff3 | python3 exome.py > MGI.exome.gff3
 #
 
 import sys

@@ -34,9 +34,6 @@ export YEARMONTH=`${DATE} +"%Y%m"`
 
 # ---------------------
 export BLAT_HOST="bhmgiapp01.jax.org"
-#export BLAT_HOST="bhmgidevapp01.jax.org"
-#export BLAT_HOST="bhmgiap09lt.jax.org"
-#export BLAT_HOST="bhmgiapp14ld.jax.org"
 
 export BLAT_PORT="9038"
 export BLAT_ARGS="-nohead -minIdentity=98"

@@ -216,7 +216,6 @@ class ConvertNCBI:
             e.type = "pseudogenic_exon"
             e.Parent = [t.ID]
             gff3.crossReference([m, t, e])
-            self.log("Created exon " + e.ID + "\n")
 
         
     #
