@@ -44,6 +44,8 @@ def openSequenceFetch(ids, tool, email, db='nucleotide', retmode='text', rettype
                 time.sleep(sleeptime)
                 fd = urllib.request.urlopen(FETCHURL, params)
             except:
+                sys.stderr.write(str(sys.exc_info()[1])+'\n')
+                sys.stderr.flush()
                 continue
 
             line = fd.readline().decode('utf-8')
