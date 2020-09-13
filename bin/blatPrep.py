@@ -56,14 +56,16 @@ sequences = '''
       a.accid as markerid,
       m.symbol,
       m.name,
-      v.term as mcv_type
+      v.term as mcv_type,
+      mc.chromosome
   FROM
       SEQ_Marker_Cache c,
       SEQ_Sequence s,
       ACC_Accession a,
       MRK_Marker m,
       MRK_MCV_Cache v,
-      VOC_Term st
+      VOC_Term st,
+      MRK_Location_Cache mc
   WHERE c._sequence_key = s._sequence_key
   AND c._LogicalDB_key in (9,27)
   AND c._marker_key in (%s)
@@ -74,6 +76,7 @@ sequences = '''
   AND c._marker_key = m._marker_key
   AND m._Marker_key = v._Marker_key
   AND v.qualifier = 'D'
+  AND c._marker_key = mc._marker_key
   AND s._sequencetype_key = st._term_key
   /* Seq assoc with only one gene */
   AND s._sequence_key in (%s)
@@ -113,5 +116,6 @@ for r in db.sql(sequences):
       r["name"],
       mcvtype,
       sotype,
+      r["chromosome"]
     ]
     print("\t".join(line))

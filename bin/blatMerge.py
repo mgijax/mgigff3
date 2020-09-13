@@ -34,13 +34,14 @@ class MgiComputedMerger:
     def loadSeqidFile(self):
         fd = open(self.mgiFile, 'r')
         for line in fd:
-            seqid, seq_type, division, mgiid, symbol, name, mgi_type, so_type = line.strip().split("\t")
+            seqid, seq_type, division, mgiid, symbol, name, mgi_type, so_type, mgi_chr = line.strip().split("\t")
             self.seqid2gene[seqid] = mgiid
             self.seqid2type[seqid] = seq_type
             self.seqid2div[seqid] = division
             feat = self.mgi2feats.get(mgiid, None)
             if feat is None:
                 feat = gff3.Feature()
+                feat.seqid = mgi_chr
                 feat.ID = mgiid.replace('MGI:', 'MGI_C57BL6J_')
                 feat.source = "MGI"
                 feat.type = "pseudogene" if mgi_type == "pseudogene" else "gene"
@@ -82,6 +83,22 @@ class MgiComputedMerger:
             multiples = [m for m in mfeats[1:] if self.counts[self.qNameNoVersion(m)] > 1]
             if len(multiples) :
                 self.logRejects("REJECTING SEQUENCES for GENE (%s) - multiple matches per sequence: %s" % (mgiid, set([ m.qName for m in multiples ])))
+            # Remove single best hits to chromosome different from mgi genetic chromosome.
+            ss = []
+            for m in singles:
+                # chromosome: replace "chr5" for example with just "5"
+                m.seqid = m.seqid.replace("chr","")
+                if m.seqid != mf.seqid:
+                    if mf.seqid == "UN":
+                        self.log("ASSIGNING CHROMOSOME (%s) to GENE (%s) - was UN\n" % (m.seqid,mgiid))
+                        mf.seqid = m.seqid
+                        ss.append(m)
+                    else:
+                        self.logRejects("REJECTING SEQUENCE for GENE (%s) - matches to different chromosome (%s) than MGI genetic chromosome (%s)" % (mgiid,m.seqid,mf.seqid))
+                else:
+                    ss.append(m)
+            singles = ss
+
             # if no single matches, reject the gene
             if len(singles) == 0:
                 if len(multiples):
@@ -93,7 +110,6 @@ class MgiComputedMerger:
             # tweak the models
             for s in singles:
                 for ss in gff3.flattenModel(s):
-                    # chromosome: replace "chr5" for example with just "5"
                     ss.seqid = ss.seqid.replace("chr","")
                     # tag with the MGI#
                     ss.mgi_id = mgiid
@@ -165,16 +181,16 @@ class MgiComputedMerger:
     def output (self) :
         def topLevelKey (fs) :
             s = fs[0].seqid
+            ss = fs[0].start
             if len(s) == 1 and s.isdigit():
                 s = "0" + s
-            return (s, fs[0].start)
-        allFeats = list(self.mgi2feats.values())
+            return (s, ss)
+        allFeats = self.mgi2feats.values()
+        allFeats = list(filter(lambda x: "_rejected" not in x[0][8], allFeats))
         allFeats.sort(key=topLevelKey)
         for feats in allFeats:
             mf = feats[0]
-            matches = [x for x in feats[1:] if not "_rejected" in x.attributes]
-            if "_rejected" in mf.attributes or len(matches) == 0:
-                continue
+            matches = feats[1:]
             model = [mf]
             for m in matches:
                 model += gff3.flattenModel(m)
