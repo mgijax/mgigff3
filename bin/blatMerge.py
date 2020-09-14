@@ -88,13 +88,8 @@ class MgiComputedMerger:
             for m in singles:
                 # chromosome: replace "chr5" for example with just "5"
                 m.seqid = m.seqid.replace("chr","")
-                if m.seqid != mf.seqid:
-                    if mf.seqid == "UN":
-                        self.log("ASSIGNING CHROMOSOME (%s) to GENE (%s) - was UN\n" % (m.seqid,mgiid))
-                        mf.seqid = m.seqid
-                        ss.append(m)
-                    else:
-                        self.logRejects("REJECTING SEQUENCE for GENE (%s) - matches to different chromosome (%s) than MGI genetic chromosome (%s)" % (mgiid,m.seqid,mf.seqid))
+                if m.seqid != mf.seqid and mf.seqid != "UN":
+                    self.logRejects("REJECTING SEQUENCE for GENE (%s) - matches to different chromosome (%s) than MGI genetic chromosome (%s)" % (mgiid,m.seqid,mf.seqid))
                 else:
                     ss.append(m)
             singles = ss
@@ -107,6 +102,19 @@ class MgiComputedMerger:
                     self.logRejects("REJECTING GENE (%s) - No matches." % mgiid)
                 mf._rejected = True
                 continue
+
+            # if singles do not all agree on chromosome, reject the gene
+            chroms = set([ s.seqid for s in singles ])
+            if len(chroms) > 1:
+                self.logRejects("REJECTING GENE (%s) - Sequences match to multiple chromosomes: %s " % (mgiid, set([ m.qName for m in singles ])))
+                mf._rejected = True
+                continue
+
+            # If MGI chr is UN, assign the chromosome based on the blat hit
+            if mf.seqid == "UN":
+                mf.seqid = list(chroms)[0]
+                self.log("ASSIGNING CHROMOSOME (%s) to gene (%s) - was UN.\n" % (mf.seqid, mgiid))
+
             # tweak the models
             for s in singles:
                 for ss in gff3.flattenModel(s):
@@ -115,12 +123,7 @@ class MgiComputedMerger:
                     ss.mgi_id = mgiid
                 # Attach the match feature to the gene
                 s.Parent = [ mf.ID ]
-            # if singles do not all agree on chromosome, reject the lot
-            chroms = set([ s.seqid for s in singles ])
-            if len(chroms) > 1:
-                self.logRejects("REJECTING GENE (%s) - Sequences match to multiple chromosomes: %s " % (mgiid, set([ m.qName for m in singles ])))
-                mf._rejected = True
-                continue
+
             # Divide into DNA and RNA and EST matches
             rnaSingles = []
             estSingles = []
@@ -159,7 +162,7 @@ class MgiComputedMerger:
                 mf.strand = list(strands)[0]
                 mfeats[1:] = rnaSingles
             elif len(estSingles) > 0 :
-                self.log("GENE (%s) - only has EST %s matches. Setting strand to '.'\n" % (mgiid, "and DNA" if len(dnaSingles) else ''))
+                self.log("GENE (%s) - only has EST%s matches. Setting strand to '.'\n" % (mgiid, " and DNA" if len(dnaSingles) else ''))
                 mf.strand = "."
                 for ff in estSingles:
                   for fff in gff3.flattenModel(ff):
