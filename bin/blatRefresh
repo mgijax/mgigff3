@@ -61,14 +61,10 @@ ${PSLREPS} ${PSLREPS_ARGS} ${WORKINGDIR}/blat.gfclient.psl ${WORKINGDIR}/blat.ps
 checkExit
 
 # 3b. Convert the alignments to GFF3 hierarchies and attach the corresponding MGI id
-# Send results to GFF file specified on command line
-logit "Blat models: Generating models..."
-${PYTHON} ${BIN}/blatMerge.py ${WORKINGDIR}/blat.pslreps.psl ${WORKINGDIR}/blat.seqids.txt > ${BLAT_OFILE}
-checkExit
-
 # 3c. Generates file to use as input to the C4AM load
-logit "Blat models: Generating C4AM file..."
-${PYTHON} ${BIN}/gff2c4am.py < ${BLAT_OFILE} > ${C4AM_OFILE}
+# Send results to GFF file specified on command line
+logit "Blat models: Generating models file and C4AM coordinates file..."
+${PYTHON} ${BIN}/blatMerge.py ${WORKINGDIR}/blat.pslreps.psl ${WORKINGDIR}/blat.seqids.txt ${BLAT_OFILE} ${C4AM_OFILE}
 checkExit
 
 logit "Blat models: finished."

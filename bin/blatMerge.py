@@ -15,10 +15,12 @@ import psl
 
 class MgiComputedMerger:
     def __init__(self):
-        if len(sys.argv) != 3:
+        if len(sys.argv) != 5:
             self.usage()
         self.pslFile = sys.argv[1]
         self.mgiFile = sys.argv[2]
+        self.outGffFile = sys.argv[3]
+        self.outC4amFile = sys.argv[4]
         self.seqid2gene = {}
         self.seqid2type = {}
         self.seqid2div = {}
@@ -28,7 +30,7 @@ class MgiComputedMerger:
         sys.stderr.write(m)
 
     def usage(self):
-        print("USAGE: python %s PSLFILE MGISEQIDFILE > OUTFILE" % sys.argv[0])
+        print("USAGE: python %s PSLFILE MGISEQIDFILE OUTFILE C4AM_OUTFILE" % sys.argv[0])
         sys.exit(-1)
 
     def loadSeqidFile(self):
@@ -188,6 +190,9 @@ class MgiComputedMerger:
             if len(s) == 1 and s.isdigit():
                 s = "0" + s
             return (s, ss)
+        gffofd = open(self.outGffFile, 'w')
+        c4amOfd = open(self.outC4amFile, 'w')
+        
         allFeats = self.mgi2feats.values()
         allFeats = list(filter(lambda x: "_rejected" not in x[0][8], allFeats))
         allFeats.sort(key=topLevelKey)
@@ -198,8 +203,27 @@ class MgiComputedMerger:
             for m in matches:
                 model += gff3.flattenModel(m)
             for f in model:
-                sys.stdout.write(str(f))
-            sys.stdout.write("###\n")
+                gffofd.write(str(f))
+            gffofd.write("###\n")
+            #
+            seqids = list(map(lambda m: m.Name, matches))
+            attrs = mf.attributes
+            if "Parent" in attrs and len(attrs["Parent"]) > 0:
+                # f is not a top-level feature. Skip it.
+                continue
+            c4amRec = [
+                attrs["curie"],
+                mf.seqid,
+                str(mf.start),
+                str(mf.end),
+                "" if mf.strand == "." else mf.strand,
+                "MGI_Blat",
+                "MGI",
+                "",
+                mf.Name,
+                ','.join(seqids)
+            ]
+            c4amOfd.write("\t".join(c4amRec)+"\n")
 
     def main(self):
         self.loadSeqidFile()
