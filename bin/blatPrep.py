@@ -8,6 +8,7 @@
 # - only DNA and RNA (no protein)
 # - if DNA, must be < 10 kb in length
 # - must be associated with only one gene.
+# - must not be a strain-specific gene
 # 
 # Outputs a 7-column file:
 #       seqid   ID of the sequence
@@ -24,6 +25,7 @@ from lib import mgiadhoc as db
 
 # Genes and pseudogenes.
 # Exclude miRNA and tRNA genes.
+# Exclude genes with a strain-specificity note
 genes = '''
   SELECT m._marker_key
   FROM MRK_Marker m, MRK_MCV_Cache mcv
@@ -33,6 +35,10 @@ genes = '''
   AND m._marker_key = mcv._marker_key
   AND mcv.qualifier = 'D'
   AND mcv.term not in ('miRNA gene', 'tRNA gene')
+  AND m._marker_key not in (
+      select _object_key
+      from mgi_note
+      where _notetype_key = 1035)
   '''
 
 # Sequences in MGI associated with exactly one gene
