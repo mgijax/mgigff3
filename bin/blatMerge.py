@@ -115,6 +115,7 @@ class MgiComputedMerger:
             # If MGI chr is UN, assign the chromosome based on the blat hit
             if mf.seqid == "UN":
                 mf.seqid = list(chroms)[0]
+                mf._assigned = True
                 self.log("ASSIGNING CHROMOSOME (%s) to gene (%s) - was UN.\n" % (mf.seqid, mgiid))
 
             # tweak the models
@@ -199,15 +200,10 @@ class MgiComputedMerger:
         for feats in allFeats:
             mf = feats[0]
             matches = feats[1:]
-            model = [mf]
-            for m in matches:
-                model += gff3.flattenModel(m)
-            for f in model:
-                gffofd.write(str(f))
-            gffofd.write("###\n")
             #
             seqids = list(map(lambda m: m.Name, matches))
             attrs = mf.attributes
+            assigned = attrs.pop("_assigned", False)
             if "Parent" in attrs and len(attrs["Parent"]) > 0:
                 # f is not a top-level feature. Skip it.
                 continue
@@ -220,10 +216,18 @@ class MgiComputedMerger:
                 "MGI_Blat",
                 "MGI",
                 "",
+                "UN" if assigned else mf.seqid,
                 mf.Name,
                 ','.join(seqids)
             ]
             c4amOfd.write("\t".join(c4amRec)+"\n")
+            ###
+            model = [mf]
+            for m in matches:
+                model += gff3.flattenModel(m)
+            for f in model:
+                gffofd.write(str(f))
+            gffofd.write("###\n")
 
     def main(self):
         self.loadSeqidFile()
