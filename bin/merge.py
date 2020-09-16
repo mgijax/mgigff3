@@ -74,6 +74,8 @@ class ModelMerger:
         for f in feats:
             if "Parent" in f.attributes:
                 f.Parent = [ self.idMap[pid] for pid in f.Parent ]
+            if "Derives_from" in f.attributes:
+                f.Derives_from = self.idMap[f.Derives_from]
 
     #
     def flush(self, f=None):
