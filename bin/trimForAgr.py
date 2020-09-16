@@ -39,7 +39,7 @@ def processModel (m, soterm2id) :
         elif m.so_term_name == "miRNA_gene":
             # miRNA genes: restricted to gene->pre_miRNA->miRNA
             ttypes = ["pre_miRNA", "miRNA"]
-            ltypes = ["miRNA", "exon"]
+            ltypes = ["exon"]
         else:
             # else any mid- or leaf-level types are ok
             ttypes = None
@@ -58,8 +58,9 @@ def processModel (m, soterm2id) :
                 e.attributes.pop("transcript_id", None)
                 e.attributes.pop("gene_id", None)
             if len(t.children) == 0 or (ttypes and not t.type in ttypes) or not t.attributes.get("transcript_id", None):
-                m.children.remove(t)
-                log("Removing %s" % str(t))
+                if t.type != 'miRNA':
+                    m.children.remove(t)
+                    log("Removing %s" % str(t))
             else:
                 try:
                     # Transcripts already have non-curie transcript_id at this point.
