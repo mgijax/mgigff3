@@ -43,13 +43,12 @@ for m in gff3.models(feats):
         if f.type == "CDS":
             f.Name = f.protein_id
         elif f.type == "miRNA" and len(f.children):
-            # What Ensembl labels as miRNA actually has the coordinates of the immature transcript.
-            # Change Ensembl's gene->miRNA->exon hierarchy into gene->pre_miRNA->miRNA.
-            # FIXME: when Ensembl fixes their representations, remove this code.
+            # Ensembl miRNA models look ike this:
+            #     gene -> miRNA -> exon
+            # However, the miRNA actually has the coordinates of the immature transcript.
+            # Here we change the type. Output models look like:
+            #     gene -> pre_miRNA -> exon
+            # FIXME: when Ensembl fixes their representations, revise this code.
             f.type = "pre_miRNA"
-            for c in f.children:
-                if c.type == "exon":
-                    c.type = "miRNA"
-                    c.attributes.pop("exon_id", None)
         sys.stdout.write(str(f))
 

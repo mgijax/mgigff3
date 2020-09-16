@@ -6,18 +6,22 @@
 # miRNAs are mature products derived from primary transcripts. They have a "Derives_from" 
 # attribute that points to their transcript.
 # 
-# The mapping to MGI's GFF3 representation is as follows:
-#       - Each primary transcript generates a gene feature and a transcript feature.
-#         The transcript points to the gene via the Parent attribute.
-#         The gene gets the ID. The transcript gets its own ID (created from the original).
-#       - Each mature miRNA generates an exon.
-#         The Parent of the exon is the transcript designated in the Derives_from attribute.
+# The mapping to the Alliance/MGI.gff3 structure for miRNAs goes like this:
+# - each miRNA_primary_transcript generates a gene (necessary but temporary placeholder - will
+#   go away downstream at merge step). The transcript is made a child of the gene.
+# - each miRNA_primary_transcript also generates an exon as its sole child
+# - each miRNA is made a child of the gene of its primary transcript
+#   (the Derives_from attribute is maintained)
+# - each miRNA generates an exon as its sole child
+#
 #
 import sys
 import gff3
 
 seenIds = set()
-currRoot = None
+currGene = None
+currTrans = None
+
 for f in gff3.iterate( sys.stdin ):
     i = f.ID
     if i in seenIds:
@@ -38,31 +42,41 @@ for f in gff3.iterate( sys.stdin ):
         #
         # Gene feature
         #
-        currRoot = f.ID
-        f.ID += "_G"
-        f[2] = 'gene'   # 
-        f.attributes["curie"] = "miRBase:" + currRoot
-        f.attributes["so_term_name"] = "miRNA_gene"
-        sys.stdout.write(str(f))
-        f.attributes.pop("curie", None)
-        f.attributes.pop("so_term_name", None)
+        g = currGene = gff3.Feature(f)
+        g.ID += "_G"
+        g[2] = 'gene'   # 
+        g.attributes["curie"] = "miRBase:" + f.ID
+        g.attributes["so_term_name"] = "miRNA_gene"
+        sys.stdout.write(str(g))
         #
         # Transcript feature
         #
+        currTrans = f
         f[2] = 'pre_miRNA'
-        f.Parent = f.ID
-        f.ID = currRoot
+        f.Parent = g.ID
         f.transcript_id = f.ID
         sys.stdout.write(str(f))
+        #
+        # Exon feature
+        #
+        e = gff3.Feature(f)
+        e[2] = 'exon'
+        e.attributes = {}
+        e.ID = f.ID + "_exon"
+        e.Parent = f.ID
+        sys.stdout.write(str(e))
     elif f[2] == "miRNA": # per AGR
         #
         # miRNA feature
         #
-        df = f.Derives_from
-        del f.attributes['Derives_from']
-        f.ID = i
-        f.Parent = df
-        f.transcript_id = f.ID
-        if df == currRoot:
-            sys.stdout.write(str(f))
-
+        f.Parent = currGene.ID
+        sys.stdout.write(str(f))
+        #
+        # Exon feature
+        #
+        e = gff3.Feature(f)
+        e[2] = 'exon'
+        e.attributes = {}
+        e.Parent = f.ID
+        e.ID = f.ID + "_exon"
+        sys.stdout.write(str(e))

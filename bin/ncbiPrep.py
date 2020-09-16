@@ -231,14 +231,40 @@ class ConvertNCBI:
                     print(str(gff3.flattenModel(m)))
                     sys.exit(-1)
 
-    #
+    # Converts NCBI structure into that required for the Alliance
+    # NCBI structure for miRNA genes:
+    #   gene
+    #      primary_transcript
+    #          exon
+    #          miRNA
+    #              exon
+    #          miRNA
+    #              exon
+    # into Alliance specificied format. Note change in
+    # parentage of the miRNAs, and the addition of Derives_from
+    # relationships
+    #   gene
+    #      primary_transcript
+    #          exon
+    #      miRNA (Derives_from the primary transcr)
+    #          exon
+    #      miRNA (Derives_from the primary transcr)
+    #          exon
     def checkMiRnas(self, m):
         if m.attributes.get('so_term_name','') != 'miRNA':
             return
         for f in gff3.flattenModel(m):
-            if f.type == 'exon':
+            if f.type == 'miRNA':
+                # move miRNA to be direct child of gene
                 p = list(f.parents)[0]
+                pid = p.ID
                 p.children.remove(f)
+                #
+                m.children.add(f)
+                f.parents.clear()
+                f.parents.add(m)
+                f.Parent = [ m.ID ]
+                f.Derives_from = [ pid ]
             elif f.type == 'primary_transcript':
                 f.type = 'pre_miRNA'
     #
