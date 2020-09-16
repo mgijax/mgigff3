@@ -3,9 +3,7 @@ import collections
 class OrderedSet(collections.MutableSet):
 
     def __init__(self, iterable=None):
-        self.end = end = [] 
-        end += [None, end, end]         # sentinel node for doubly linked list
-        self.map = {}                   # key --> [key, prev, next]
+        self.clear()
         if iterable is not None:
             self |= iterable
 
@@ -14,6 +12,11 @@ class OrderedSet(collections.MutableSet):
 
     def __contains__(self, key):
         return key in self.map
+
+    def clear (self) :
+        self.end = end = [] 
+        end += [None, end, end]         # sentinel node for doubly linked list
+        self.map = {}                   # key --> [key, prev, next]
 
     def add(self, key):
         if key not in self.map:
