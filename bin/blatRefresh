@@ -46,7 +46,7 @@ checkExit
 # this gets the sequences from ncbi and writes to a fasta file
 nseqids=`wc -l ${WORKINGDIR}/blat.seqids.txt`
 logit "Blat models: retrieving ${nseqids} sequences from NCBI..."
-${CUT} -f 1  ${WORKINGDIR}/blat.seqids.txt | ${PYTHON} ${BIN}/seqid2fa.py - ${WORKINGDIR}/blat.seqs.fa
+${CUT} -f 1  ${WORKINGDIR}/blat.seqids.txt | ${PYTHON} ${BIN}/seqid2fa.py - ${WORKINGDIR}/blat.seqs.fa ${DATADIR}/sequences
 checkExit
 
 # 2b. Blat the sequences against the mouse genome assembly

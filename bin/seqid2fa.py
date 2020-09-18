@@ -10,6 +10,7 @@
 #
 
 import sys
+import os
 import types
 import time
 import urllib.request, urllib.parse, urllib.error
@@ -23,15 +24,69 @@ TOOL      = "MGI"
 EMAIL     = "Joel.Richardson@jax.org"
 NTRIES    = 3
 
-def openSequenceFetch(ids, tool, email, db='nucleotide', retmode='text', rettype='fasta',batchsize=BATCHSIZE,sleeptime=SLEEPTIME):
+def log (msg) :
+    sys.stderr.write(msg)
+    sys.stderr.flush()
+
+cfile = None
+cfd = None
+def processLine (line, yielded, cacheDir) :
+    global cfile
+    global cfd
+    if line.startswith(">"):
+        ident = line.split()[0][1:]
+        identNoV = ident.split(".")[0]
+        yielded.add(ident)
+        yielded.add(identNoV)
+        if cacheDir:
+            cfile = os.path.join(cacheDir, identNoV + '.fa')
+            if cfd:
+                cfd.close()
+            cfd = open(cfile, 'w')
+    if cfd:
+        cfd.write(line)
+    return line
+
+def openSequenceFetch(
+        ids,
+        tool,
+        email,
+        db='nucleotide',
+        retmode='text',
+        rettype='fasta',
+        batchsize=BATCHSIZE,
+        sleeptime=SLEEPTIME,
+        cacheDir=None):
+    # 
+    if cacheDir:
+        os.makedirs(cacheDir, exist_ok=True)
+        #
+        # First yield all sequences currently in the cache
+        ids2 = []
+        for ident in ids:
+            cachefile = os.path.join(cacheDir, ident + '.fa')
+            if os.path.exists(cachefile):
+                fd = open(cachefile, 'r')
+                for line in fd:
+                    yield line
+                fd.close()
+            else:
+                ids2.append(ident)
+        # Now go on and request the remainder from NCBI
+        ids = ids2
+
+    #
     for i in range(0, len(ids), batchsize):
+
+        idBatch = ids[i:i+batchsize]
+        yielded = set()
 
         # Get the next batch of ids.
         params = urllib.parse.urlencode(
            {'db': db,
             'retmode' : retmode,
             'rettype' : rettype,
-            'id' : ",".join(ids[i:i+batchsize]),
+            'id' : ",".join(idBatch),
             'tool' : tool,
             'email' : email
             }).encode()
@@ -39,35 +94,34 @@ def openSequenceFetch(ids, tool, email, db='nucleotide', retmode='text', rettype
         # For each batch, try up to NTRIES time to get the sequences. Provides
         # some protection from intermittant errors from the eUtils server.
         for ntry in range(NTRIES):
-
             try:
                 time.sleep(sleeptime)
+                log("Fetching sequence batch %d, %d sequences, attempt %d\n" % (i/batchsize, len(idBatch), ntry+1))
                 fd = urllib.request.urlopen(FETCHURL, params)
             except:
-                sys.stderr.write(str(sys.exc_info()[1])+'\n')
-                sys.stderr.flush()
+                log("Error: %s\n" % str(sys.exc_info()[1]))
                 continue
 
             line = fd.readline().decode('utf-8')
             if not line:
+                log("Could not read first line.\n")
                 break
             elif not line.startswith(">"):
-                if ntry == NTRIES-1:
-                    # Last try. Write the error to stderr.
-                    sys.stderr.write(line)
-                    sys.stderr.write(fd.read())
+                log("First line is not a Fasta header: %s\n" % line)
                 fd.close()
                 continue
-
             # success!
-            yield line
+            yield processLine(line, yielded)
             for line in fd:
-                yield line.decode('utf-8')
+                yield processLine(line.decode('utf-8'), yielded)
             fd.close()
+            for ident in idBatch:
+                if not ident in yielded:
+                    log("Requested seqid not returned: %s\n" % ident)
             break
         else:
             # if we exhaust the loop, there was an error
-            sys.stderr.write("Failed to get data from eUtils after %d tries.\n" % NTRIES)
+            log("Failed to get data from eUtils after %d tries.\n" % NTRIES)
             sys.exit(1)
 
 def fetchSequences(
@@ -75,6 +129,7 @@ def fetchSequences(
         outfile,
         tool,
         email,
+        cacheDir,
         db='nucleotide',
         retmode='text',
         rettype='fasta',
@@ -95,12 +150,10 @@ def fetchSequences(
     else:
         fd = open(outfile, 'w')
     #
-    for line in openSequenceFetch(ids,tool,email,db,retmode,rettype,batchsize,sleeptime):
+    for line in openSequenceFetch(ids,tool,email,db,retmode,rettype,batchsize,sleeptime,cacheDir):
         if line[0] == ">":
             seqidv = line[1:].split()[0] # everything after ">" up to the first whitespace char
             seqid = seqidv.split('.')[0]
-
-            
         fd.write(line)
     #
     if fd is not sys.stdout:
@@ -108,8 +161,10 @@ def fetchSequences(
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
-        fetchSequences('-', '-', TOOL, EMAIL)
+        fetchSequences('-', '-', TOOL, EMAIL, None)
     elif len(sys.argv) == 2:
-        fetchSequences(sys.argv[1], '-', TOOL, EMAIL)
+        fetchSequences(sys.argv[1], '-', TOOL, EMAIL, None)
     elif len(sys.argv) == 3:
-        fetchSequences(sys.argv[1], sys.argv[2], TOOL, EMAIL)
+        fetchSequences(sys.argv[1], sys.argv[2], TOOL, EMAIL, None)
+    elif len(sys.argv) == 4:
+        fetchSequences(sys.argv[1], sys.argv[2], TOOL, EMAIL, sys.argv[3])
