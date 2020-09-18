@@ -99,8 +99,10 @@ ${MKDIR} -p ${MONTHLYDIR}
 ${MKDIR} -p ${ANNUALDIR}
 
 ########
-# truncate log file
-> ${LOGFILE}
+# truncate log file if we're doing a complete run
+if [ $nargs -eq 0 ]; then
+    > ${LOGFILE}
+fi
 
 ##
 if [ $nargs -eq 0 ]; then
@@ -171,11 +173,11 @@ function refreshProvider {
 	checkExit
     fi
 
-    if [ ${nocounts} = "F" ]; then
-        logit "Counting $provider downloaded..."
-        ${COUNTCMD} ${downloaded} > ${dprofile} 2>> ${LOGFILE}
-        checkExit
-    fi
+    #if [ ${nocounts} = "F" ]; then
+    #    logit "Counting $provider downloaded..."
+    #    ${COUNTCMD} ${downloaded} > ${dprofile} 2>> ${LOGFILE}
+    #    checkExit
+    #fi
 
     logit "Prepping ${provider}..."
     $prepCmd < ${downloaded} > ${prepped} 2>> ${LOGFILE}
@@ -189,11 +191,11 @@ function refreshProvider {
     writeHeader ${provider} ${downloaded} ${url} ${headerfile}
     checkExit
 
-    if [ ${nocounts} = "F" ]; then
-        logit "Counting ${provider} after prep..."
-        ${COUNTCMD} ${splitpattern2} > ${pprofile} 2>> ${LOGFILE}
-        checkExit
-    fi
+    #if [ ${nocounts} = "F" ]; then
+    #    logit "Counting ${provider} after prep..."
+    #    ${COUNTCMD} ${splitpattern2} > ${pprofile} 2>> ${LOGFILE}
+    #    checkExit
+    #fi
 
     return 0
 }
@@ -303,9 +305,9 @@ if [ $nargs -eq 0 -o $docat == T ]; then
     ${BIN}/acceptance.sh ${WORKINGDIR}/MGI.gff3 2>> ${LOGFILE}
     checkExit
 
-    logit "Generating sample file..."
-    ${BIN}/sample.sh < ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.sample.gff3 2>> ${LOGFILE}
-    checkExit
+    #logit "Generating sample file..."
+    #${BIN}/sample.sh < ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.sample.gff3 2>> ${LOGFILE}
+    #checkExit
 
     # Generate feature type profile
     logit "Generating feature type profile..."
