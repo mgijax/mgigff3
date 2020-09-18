@@ -111,9 +111,9 @@ def openSequenceFetch(
                 fd.close()
                 continue
             # success!
-            yield processLine(line, yielded)
+            yield processLine(line, yielded, cacheDir)
             for line in fd:
-                yield processLine(line.decode('utf-8'), yielded)
+                yield processLine(line.decode('utf-8'), yielded, cacheDir)
             fd.close()
             for ident in idBatch:
                 if not ident in yielded:
