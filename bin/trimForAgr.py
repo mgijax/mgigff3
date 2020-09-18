@@ -61,6 +61,8 @@ def processModel (m, soterm2id) :
                 if t.type != 'miRNA':
                     m.children.remove(t)
                     log("Removing %s" % str(t))
+                else:
+                    t.attributes.pop("gene_id", None)
             else:
                 try:
                     # Transcripts already have non-curie transcript_id at this point.
