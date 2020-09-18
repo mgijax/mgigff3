@@ -23,4 +23,4 @@ for m in gff3.merge(*gffIters):
     sys.stdout.write(str(m))
     for f in children:
         sys.stdout.write(str(f))
-sys.stdout.write("###\n")
+    sys.stdout.write("###\n")
