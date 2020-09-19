@@ -213,7 +213,7 @@ class MgiComputedMerger:
                 str(mf.start),
                 str(mf.end),
                 "" if mf.strand == "." else mf.strand,
-                "MGI_Blat",
+                "MGI",
                 "MGI",
                 "",
                 "UN" if assigned else mf.seqid,
