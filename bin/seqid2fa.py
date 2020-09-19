@@ -22,7 +22,7 @@ BATCHSIZE = 500
 SLEEPTIME = 3
 TOOL      = "MGI"
 EMAIL     = "Joel.Richardson@jax.org"
-NTRIES    = 3
+NTRIES    = 4
 
 def log (msg) :
     sys.stderr.write(msg)
@@ -82,14 +82,14 @@ def openSequenceFetch(
         yielded = set()
 
         # Get the next batch of ids.
-        params = urllib.parse.urlencode(
-           {'db': db,
+        params = {
+            'db': db,
             'retmode' : retmode,
             'rettype' : rettype,
             'id' : ",".join(idBatch),
             'tool' : tool,
             'email' : email
-            }).encode()
+        }
 
         # For each batch, try up to NTRIES time to get the sequences. Provides
         # some protection from intermittant errors from the eUtils server.
@@ -97,9 +97,11 @@ def openSequenceFetch(
             try:
                 time.sleep(sleeptime)
                 log("Fetching sequence batch %d, %d sequences, attempt %d\n" % (i/batchsize, len(idBatch), ntry+1))
-                fd = urllib.request.urlopen(FETCHURL, params)
+                fd = urllib.request.urlopen(FETCHURL, urllib.parse.urlencode(params).encode())
             except:
-                log("Error: %s\n" % str(sys.exc_info()[1]))
+                # Avoid using word "Error" in log messages unless the script is actually about to fail.
+                msg = str(sys.exc_info()[1]).replace("Error","E-r-r-o-r").replace("error","e-r-r-o-r")
+                log("Unable to open resource: %s\n" % msg)
                 continue
 
             line = fd.readline().decode('utf-8')
@@ -115,10 +117,20 @@ def openSequenceFetch(
             for line in fd:
                 yield processLine(line.decode('utf-8'), yielded, cacheDir)
             fd.close()
+            # Report IDs that were requested but not in the result
+            # Then try to get the missing ones again
+            missingIds = []
             for ident in idBatch:
                 if not ident in yielded:
-                    log("Requested seqid not returned: %s\n" % ident)
-            break
+                    missingIds.append(ident)
+            if len(missingIds):
+                log("Response missing %d of %d requested IDs: %s\n" % (len(missingIds), len(idBatch), ",".join(missingIds)))
+                idBatch = missingIds
+                params['id'] = ",".join(idBatch)
+                log("Attempting to retrieve %d missing sequences.\n" % len(idBatch))
+                continue
+            else:
+                break
         else:
             # if we exhaust the loop, there was an error
             log("Failed to get data from eUtils after %d tries.\n" % NTRIES)
