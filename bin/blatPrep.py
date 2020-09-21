@@ -100,6 +100,8 @@ typemap = {
   'lncRNA gene'                 : 'lncRNA_gene',
   'miRNA gene'                  : 'miRNA_gene',
   'protein coding gene'         : 'protein_coding_gene',
+  'pseudogene'                  : 'pseudogene',
+  'rRNA gene'                   : 'rRNA_gene',
   'tRNA gene'                   : 'tRNA_gene',
   'unclassified gene'           : 'gene',
   'unclassified non-coding RNA gene' : 'ncRNA_gene',
@@ -112,7 +114,7 @@ for r in db.sql(sequences):
     if r["markerid"] in genesWithModels:
         continue
     mcvtype = r["mcv_type"]
-    sotype  = typemap.get(mcvtype, mcvtype)
+    sotype  = typemap[mcvtype]
     line = [
       r["sequenceid"],
       r["seq_type"],
