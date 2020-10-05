@@ -65,7 +65,7 @@ export PYTHONPATH=${PYTHONPATH:-.}:${BIN}/lib:${BIN}/lib/intermine-1.09.09-py2.7
 # ---------------------
 #export MGI_HOST="mgi-adhoc.jax.org"
 export MGI_HOST="bhmgidevdb01.jax.org"
-export MGI_DATABASE="mgd"
+export MGI_DATABASE="prod"
 export MGI_USER="mgd_public"
 export MGI_PASSWORD="mgdpub"    # FIXME: should be name of file containing password
 

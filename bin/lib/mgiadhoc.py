@@ -3,9 +3,11 @@
 # mgiadhoc.py
 #
 # Simple library for querying the MGI ad hoc database.
-# By default, queries the public adhoc database. You can query a different db
-# by (1) changing the default parameters HOST, DATABASE, USER, and PASSWORD, and/or
-# (2) Creating a connection to the desired database and passing it to the sql() call.
+# By default, queries the public adhoc database using public login credentials.
+# You can change the default connection parameters by any of the following methods:
+# (1) Set environment variables: MGI_HOST, MGI_DATAGBASE, MGI_USER, MGI_PASSWORD.
+# (2) Set module global variables: HOST, DATABASE, USER,  PASSWORD.
+# (3) Create a connection and pass it to the sql() call.
 #
 import os
 import sys
@@ -15,14 +17,14 @@ import psycopg2
 import psycopg2.extras
 
 # Default connection parameters
-HOST=os.environ.get("MGI_HOST", "mgi-adhoc.jax.org")
-DATABASE=os.environ.get("MGI_DATABASE", "mgd")
-USER=os.environ.get("MGI_USER", "mgd_public")
-PASSWORD=os.environ.get("MGI_PASSWORD", "mgdpub")
+HOST     = os.environ.get("MGI_HOST",     "mgi-adhoc.jax.org")
+DATABASE = os.environ.get("MGI_DATABASE", "mgd")
+USER     = os.environ.get("MGI_USER",     "mgd_public")
+PASSWORD = os.environ.get("MGI_PASSWORD", "mgdpub")
 
 #
-def connect(host=None,database=None, user=None, password=None):
-    con = psycopg2.connect( host=host or HOST, database=database or DATABASE, user=user or USER, password=password or PASSWORD )
+def connect(host=HOST,database=DATABASE, user=USER, password=PASSWORD):
+    con = psycopg2.connect( host=host, database=database, user=user, password=password )
     return con
 
 #
