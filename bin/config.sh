@@ -88,7 +88,6 @@ export ENSEMBLprep="${PYTHON} ${BIN}/ensemblPrep.py"
 #
 export LOGFILE=${WORKINGDIR}/refresh.log
 #
-export SO_URL="http://www.mousemine.org/mousemine/service/query/results?query=%3Cquery+name%3D%22%22+model%3D%22genomic%22+view%3D%22SOTerm.identifier+SOTerm.name%22+longDescription%3D%22%22+sortOrder%3D%22SOTerm.identifier+asc%22%3E%3Cconstraint+path%3D%22SOTerm.obsolete%22+op%3D%22%3D%22+value%3D%22false%22%2F%3E%3C%2Fquery%3E&format=tab"
 export SO_TERM_FILE="${WORKINGDIR}/so_terms.tsv"
 
 # ---------------------
