@@ -62,6 +62,12 @@ export ANNUALDIR=${ARCHIVEDIR}/annual
 export ARCHIVEAGELIMIT=365
 
 export PYTHONPATH=${PYTHONPATH:-.}:${BIN}/lib:${BIN}/lib/intermine-1.09.09-py2.7.egg
+# ---------------------
+#export MGI_HOST="mgi-adhoc.jax.org"
+export MGI_HOST="bhmgidevdb01.jax.org"
+export MGI_DATABASE="mgd"
+export MGI_USER="mgd_public"
+export MGI_PASSWORD="mgdpub"    # FIXME: should be name of file containing password
 
 # ---------------------
 export SORTCMD="sort -k 1,1 -k 4n,4n -k 5nr,5nr"
