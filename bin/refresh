@@ -298,8 +298,9 @@ if [ $nargs -eq 0 -o $docat == T ]; then
     logit "cat ${files}"
     cat ${files} > ${WORKINGDIR}/provider.gff 2>> ${LOGFILE}
 
-    # Merge provider and blatted models
-    ${PYTHON} ${BIN}/gffMerge.py ${WORKINGDIR}/provider.gff ${WORKINGDIR}/blat.gff >> ${WORKINGDIR}/MGI.gff3
+    # Combine provider and blatted models
+    logit "Combining and sorting: ${WORKINGDIR}/provider.gff ${WORKINGDIR}/blat.gff"
+    cat ${WORKINGDIR}/provider.gff ${WORKINGDIR}/blat.gff | ${PYTHON} ${BIN}/gffSort.py >> ${WORKINGDIR}/MGI.gff3
     
     logit "Running acceptance tests..."
     ${BIN}/acceptance.sh ${WORKINGDIR}/MGI.gff3 2>> ${LOGFILE}
