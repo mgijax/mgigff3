@@ -63,9 +63,8 @@ export ARCHIVEAGELIMIT=365
 
 export PYTHONPATH=${PYTHONPATH:-.}:${BIN}/lib:${BIN}/lib/intermine-1.09.09-py2.7.egg
 # ---------------------
-#export MGI_HOST="mgi-adhoc.jax.org"
-export MGI_HOST="bhmgidevdb01.jax.org"
-export MGI_DATABASE="prod"
+export MGI_HOST="mgi-adhoc.jax.org"
+export MGI_DATABASE="mgd"
 export MGI_USER="mgd_public"
 export MGI_PASSWORD="mgdpub"    # FIXME: should be name of file containing password
 
@@ -86,7 +85,7 @@ export MIRfile=mmu.gff3
 export MIRurl=ftp://mirbase.org/pub/mirbase/CURRENT/genomes/${MIRfile}
 export MIRprep="${PYTHON} ${BIN}/mirbasePrep.py"
 #
-export ENSEMBLver=99
+export ENSEMBLver=101
 export ENSEMBLbuild=GRCm38
 export ENSEMBLfile=Mus_musculus.${ENSEMBLbuild}.${ENSEMBLver}.gff3
 export ENSEMBLurl=ftp://ftp.ensembl.org/pub/release-${ENSEMBLver}/gff3/mus_musculus/${ENSEMBLfile}.gz
