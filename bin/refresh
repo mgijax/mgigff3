@@ -22,16 +22,6 @@ nocounts=F
 until [ -z "$1" ]  # Until all parameters used up . . .
 do
     case "$1" in
-    -c)
-	shift
-	echo "Sourcing config file:" $1
-	source $1
-        if [ $? -ne 0 ]; then
-            echo "Config file not found or not in correct format: $1"
-            exit 1
-        fi
-	nargs=$((nargs-2))
-	;;
     -n)
         donothing=T
 	;;
@@ -76,14 +66,13 @@ do
     shift
 done
 
-source ${DIR}/bin/config.sh
+source ${DIR}/bin/utils.sh
 
 echo "Data directory:" $DATADIR
 echo "Work directory:" $WORKINGDIR
 echo "Dist directory:" $DISTRIBDIR
 echo "Logging to: " ${LOGFILE}
 #
-
 if [ $donothing == T ]; then
     echo "Doing nothing."
     exit 0
@@ -206,11 +195,11 @@ if [ $nargs -eq 0 -o $domgi == T ]; then
     # Queries MGI data. Writes genes and pseudogenes into gff3 file. Each has Dbxrefs containing
     # any provider model ids. Downstream merging will be directed by this data.
     logit "Prepping mgi ..."
-    ${PYTHON} ${BIN}/mgiPrep.py 2>> ${LOGFILE} > ${WORKINGDIR}/mgi.gff
+    ${PYTHON} ${BINDIR}/mgiPrep.py 2>> ${LOGFILE} > ${WORKINGDIR}/mgi.gff
     checkExit
     #
     logit "Downloading SO terms..."
-    ${PYTHON} ${BIN}/getSOterms.py 2>> ${LOGFILE} > ${SO_TERM_FILE}
+    ${PYTHON} ${BINDIR}/getSOterms.py 2>> ${LOGFILE} > ${SO_TERM_FILE}
 
     logit "Writing header file..."
     # Naming the MGI header file "0" to ensure it come first
@@ -266,8 +255,8 @@ if [ $nargs -eq 0 -o $domerge == T ]; then
     do : 
 	logit
 	logit "Merging chr${i}..."
-	logit "${PYTHON} ${BIN}/merge.py ${WORKINGDIR}/mgi.gff ${WORKINGDIR}/*.chr${i}.gff > ${WORKINGDIR}/chr${i}.gff 2>> ${LOGFILE}"
-	${PYTHON} ${BIN}/merge.py ${WORKINGDIR}/mgi.gff ${WORKINGDIR}/*.chr${i}.gff > ${WORKINGDIR}/chr${i}.gff 2>> ${LOGFILE}
+	logit "${PYTHON} ${BINDIR}/merge.py ${WORKINGDIR}/mgi.gff ${WORKINGDIR}/*.chr${i}.gff > ${WORKINGDIR}/chr${i}.gff 2>> ${LOGFILE}"
+	${PYTHON} ${BINDIR}/merge.py ${WORKINGDIR}/mgi.gff ${WORKINGDIR}/*.chr${i}.gff > ${WORKINGDIR}/chr${i}.gff 2>> ${LOGFILE}
 	checkExit
     done
 fi
@@ -280,7 +269,7 @@ if [ $nargs -eq 0 -o $doblat == T ]; then
     # sequences. The sequences are blatted against the mouse genome, and the best scoring
     # hits are made into models. 
     logit "Generating blat models..."
-    ${BIN}/blatRefresh ${WORKINGDIR}/blat.gff ${WORKINGDIR}/blat.c4am.tsv 2>> ${LOGFILE}
+    ${BINDIR}/blatRefresh ${WORKINGDIR}/blat.gff ${WORKINGDIR}/blat.c4am.tsv 2>> ${LOGFILE}
     checkExit
 fi
 
@@ -300,14 +289,14 @@ if [ $nargs -eq 0 -o $docat == T ]; then
 
     # Combine provider and blatted models
     logit "Combining and sorting: ${WORKINGDIR}/provider.gff ${WORKINGDIR}/blat.gff"
-    cat ${WORKINGDIR}/provider.gff ${WORKINGDIR}/blat.gff | ${PYTHON} ${BIN}/gffSort.py >> ${WORKINGDIR}/MGI.gff3
+    cat ${WORKINGDIR}/provider.gff ${WORKINGDIR}/blat.gff | ${PYTHON} ${BINDIR}/gffSort.py >> ${WORKINGDIR}/MGI.gff3
     
     logit "Running acceptance tests..."
-    ${BIN}/acceptance.sh ${WORKINGDIR}/MGI.gff3 2>> ${LOGFILE}
+    ${BINDIR}/acceptance.sh ${WORKINGDIR}/MGI.gff3 2>> ${LOGFILE}
     checkExit
 
     #logit "Generating sample file..."
-    #${BIN}/sample.sh < ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.sample.gff3 2>> ${LOGFILE}
+    #${BINDIR}/sample.sh < ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.sample.gff3 2>> ${LOGFILE}
     #checkExit
 
     # Generate feature type profile
@@ -320,7 +309,7 @@ fi
 # EXOME phase
 if [ $nargs -eq 0 -o $doexome == T ]; then
     logit "Creating MGI exome file..."
-    ${PYTHON} ${BIN}/exome.py < ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.exome.gff3 2>> ${LOGFILE}
+    ${PYTHON} ${BINDIR}/exome.py < ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.exome.gff3 2>> ${LOGFILE}
     checkExit
 fi
 
@@ -328,11 +317,11 @@ fi
 # AGR phase
 if [ $nargs -eq 0 -o $doagr == T ]; then
     logit "Generating GFF3 file for AGR..."
-    ${PYTHON} ${BIN}/trimForAgr.py < ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.agr.gff3 2>> ${LOGFILE}
+    ${PYTHON} ${BINDIR}/trimForAgr.py < ${WORKINGDIR}/MGI.gff3 > ${WORKINGDIR}/MGI.agr.gff3 2>> ${LOGFILE}
     checkExit
 
     logit "Running acceptance tests..."
-    ${BIN}/acceptance.sh ${WORKINGDIR}/MGI.agr.gff3 2>> ${LOGFILE}
+    ${BINDIR}/acceptance.sh ${WORKINGDIR}/MGI.agr.gff3 2>> ${LOGFILE}
     checkExit
 fi
 

@@ -1,20 +1,100 @@
-#format: sh
 # 
 # Configuration file (mgiconfig) for mgigff product.
 # See also: config.cfg in this directory.
 #
 if [ "${MGICONFIG}" = "" ]
 then
-    MGICONFIG=/usr/local/mgi/live/mgiconfig
-    export MGICONFIG
+    export MGICONFIG=/usr/local/mgi/live/mgiconfig
 fi
-. ${MGICONFIG}/master.config.sh
+source ${MGICONFIG}/master.config.sh
+#
+export BINDIR=${DIR}/bin
+export DEV_INSTALL="false"
 
-DATADIR=${DATALOADSOUTPUT}/mgi/mgigff3/downloads
-export DATADIR
+if [ ${DEV_INSTALL} == "true" ] ; then
+    export DATADIR=${DIR}/output/downloads
+    export WORKINGDIR=${DIR}/output/work
+    export DISTRIBDIR=${DIR}/output/dist
+else
+    export DATADIR=${DATALOADSOUTPUT}/mgi/mgigff3/downloads
+    export WORKINGDIR=${DATALOADSOUTPUT}/mgi/mgigff3/work
+    export DISTRIBDIR=${FTPROOT}/pub/mgigff3
+fi
 
-WORKINGDIR=${DATALOADSOUTPUT}/mgi/mgigff3/work
-export WORKINGDIR
+# ---------------------
+export MGI_HOST="${MGD_DBSERVER}"
+export MGI_DATABASE="${MGD_DBNAME}"
+export MGI_USER="${MGD_DBUSER}"
+export MGI_PASSWORD=`cat "${MGD_DBPASSWORDFILE}"`
+# ---------------------
+#export BLAT_HOST="bhmgiapp01.jax.org"
+#export BLAT_PORT="9038"
+export BLAT_ARGS="-nohead -minIdentity=98"
+# ---------------------
+#export PATH="${PATH}:/opt/python3.7/bin"
+#export PYTHON=python3
+export CURL=curl
+export CP=cp
+export GUNZIP=gunzip
+export GZIP=gzip
+export GREP=grep
+export SORT=sort
+export MKDIR=mkdir
+export DATE=date
+export TOUCH=touch
+export CUT=cut
+export SED=sed
+export GFCLIENT=gfClient
+export PSLREPS=pslReps
+export GREP=grep
+export RM=rm
+export LN=ln
+export MV=mv
+export FIND=find
+# ---------------------
+export DATESTAMP=`${DATE} +"%Y-%m-%d"`
+export DATESTAMP2=`${DATE} +"%Y%m%d.%H%M%S"`
+export YEAR=`${DATE} +"%Y"`
+export YEARMONTH=`${DATE} +"%Y%m"`
+#
+export PSLREPS_ARGS="-singleHit -nohead "
+#
+# The chromosomes and their order.
+export CHRS=( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 X Y MT )
 
-DISTRIBDIR=${FTPROOT}/pub/mgigff3
-export DISTRIBDIR
+# ---------------------
+export ARCHIVEDIR=${DISTRIBDIR}/archive
+export MONTHLYDIR=${ARCHIVEDIR}/monthly
+export ANNUALDIR=${ARCHIVEDIR}/annual
+
+# Age limit in days. Archived files older than this are culled to one per year.
+export ARCHIVEAGELIMIT=365
+
+export PYTHONPATH=${PYTHONPATH}:${BINDIR}/lib
+# ---------------------
+export SORTCMD="sort -k 1,1 -k 4n,4n -k 5nr,5nr"
+export SPLITCMD="${PYTHON} ${BINDIR}/splitGff.py -d ${WORKINGDIR}"
+export COUNTCMD="${PYTHON} ${BINDIR}/profileGff.py"
+
+# ---------------------
+#
+export NCBIver=108.20200622
+export NCBIbuild=GCF_000001635.26_GRCm38.p6
+export NCBIfile=${NCBIbuild}_genomic.gff
+export NCBIurl=https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Mus_musculus/annotation_releases/${NCBIver}/${NCBIbuild}/${NCBIfile}.gz
+export NCBIprep="${PYTHON} ${BINDIR}/ncbiPrep.py"
+#
+export MIRfile=mmu.gff3
+export MIRurl=ftp://mirbase.org/pub/mirbase/CURRENT/genomes/${MIRfile}
+export MIRprep="${PYTHON} ${BINDIR}/mirbasePrep.py"
+#
+export ENSEMBLver=101
+export ENSEMBLbuild=GRCm38
+export ENSEMBLfile=Mus_musculus.${ENSEMBLbuild}.${ENSEMBLver}.gff3
+export ENSEMBLurl=ftp://ftp.ensembl.org/pub/release-${ENSEMBLver}/gff3/mus_musculus/${ENSEMBLfile}.gz
+export ENSEMBLprep="${PYTHON} ${BINDIR}/ensemblPrep.py"
+#
+export LOGFILE=${WORKINGDIR}/refresh.log
+#
+export SO_TERM_FILE="${WORKINGDIR}/so_terms.tsv"
+

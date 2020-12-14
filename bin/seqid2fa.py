@@ -16,7 +16,7 @@ import time
 import urllib.request, urllib.parse, urllib.error
 import xml.dom.minidom
 
-# FIXME. Move all these into config.sh and access via os.environ
+# FIXME. Move all these into Configuration and access via os.environ
 FETCHURL  = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi'
 BATCHSIZE = 500
 SLEEPTIME = 3
