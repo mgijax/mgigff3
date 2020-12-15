@@ -54,6 +54,7 @@ seqsWithOneGene = '''
 # - type = DNA or RNA
 # - logical db = Genbank or RefSeq
 # - if type = DNA, then length <= 10 kb
+# - not low quality
 sequences = '''
   SELECT distinct
       c.accid as sequenceid,
@@ -84,12 +85,13 @@ sequences = '''
   AND v.qualifier = 'D'
   AND c._marker_key = mc._marker_key
   AND s._sequencetype_key = st._term_key
+  /* sequence quality != low */
+  AND s._sequencequality_key != 316340
   /* Seq assoc with only one gene */
   AND s._sequence_key in (%s)
   /* RNA or DNA <= 10kb in len */
   AND (s._sequencetype_key = 316346 OR (s._sequencetype_key = 316347 AND s.length <= 10000))
   ''' % (genes, seqsWithOneGene)
-
 
 typemap = {
   'antisense lncRNA gene'       : 'lncRNA_gene',
@@ -99,6 +101,7 @@ typemap = {
   'lincRNA gene'                : 'lincRNA_gene',
   'lncRNA gene'                 : 'lncRNA_gene',
   'miRNA gene'                  : 'miRNA_gene',
+  'non-coding RNA gene'         : 'ncRNA_gene',
   'polymorphic pseudogene'      : 'polymorphic_pseudogene',
   'protein coding gene'         : 'protein_coding_gene',
   'pseudogene'                  : 'pseudogene',

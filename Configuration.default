@@ -27,12 +27,8 @@ export MGI_DATABASE="${MGD_DBNAME}"
 export MGI_USER="${MGD_DBUSER}"
 export MGI_PASSWORD=`cat "${MGD_DBPASSWORDFILE}"`
 # ---------------------
-#export BLAT_HOST="bhmgiapp01.jax.org"
-#export BLAT_PORT="9038"
 export BLAT_ARGS="-nohead -minIdentity=98"
 # ---------------------
-#export PATH="${PATH}:/opt/python3.7/bin"
-#export PYTHON=python3
 export CURL=curl
 export CP=cp
 export GUNZIP=gunzip
