@@ -152,7 +152,7 @@ class Alignment(list):
         return self.matches - self.misMatches - self.qNumInsert - self.tNumInsert
 
     def matchLength(self):
-        return self.qEnd - self.qStart
+        return sum(self.blockSizes)
 
     def percentIdentity(self):
         return (100.0 * self.matches) / self.matchLength()
@@ -201,7 +201,7 @@ def toGff(input):
                     'qName' : a.qName,
                     'matchLen' : a.matchLength(),
                     'pctIdentity' : a.percentIdentity(),
-                    'pctLen' : a.percentLength(),
+                    'pctLength' : a.percentLength(),
                     'score' : a.score(),
                     'qStart' : a.qStart,
                     'qEnd' : a.qEnd,

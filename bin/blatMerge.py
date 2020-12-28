@@ -4,14 +4,19 @@
 # Merges the filtered blat results (PSLFILE) with the gene data from MGI (MGISEQIDFILE)
 # and generates the MGI blatted model file.
 #
-# % python mgiComputedMerge.py PSLFILE MGISEQIDFILE > OUTFILE
+# Applies additional filters on the results.
+#
+# % python blatMerge.py PSLFILE MGISEQIDFILE > OUTFILE
 #
 # The file is sorted in the standard way.
 #
 
 import sys
+import os
 import gff3
 import psl
+
+MIN_PCT_LENGTH = float(os.environ['BLAT_MIN_LENGTH'])
 
 class MgiComputedMerger:
     def __init__(self):
@@ -64,6 +69,10 @@ class MgiComputedMerger:
             seqid = m.qName.split(".")[0]       # get the seqid w/o version number
             mgiid = self.seqid2gene[seqid]      # lookup the corresponding mgiid
             mfeats = self.mgi2feats[mgiid]      # list containing the gene followed by its match features
+            if m.pctLength < MIN_PCT_LENGTH:
+                self.logRejects("REJECTING SEQUENCE for GENE (%s) - pctLength (%1.2f) less than minimum (%1.2f)" % (mgiid,m.pctLength,MIN_PCT_LENGTH))
+                self.logRejects(str(m))
+                continue
             mfeats.append(m)
             self.counts[seqid] = self.counts.setdefault(seqid, 0) + 1
 
