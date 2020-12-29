@@ -55,6 +55,7 @@ seqsWithOneGene = '''
 # - logical db = Genbank or RefSeq
 # - if type = DNA, then length <= 10 kb
 # - not low quality
+# - not in problem alignment set
 sequences = '''
   SELECT distinct
       c.accid as sequenceid,
@@ -91,6 +92,11 @@ sequences = '''
   AND s._sequence_key in (%s)
   /* RNA or DNA <= 10kb in len */
   AND (s._sequencetype_key = 316346 OR (s._sequencetype_key = 316347 AND s.length <= 10000))
+  /* not in problem alignment set */
+  AND c._sequence_key not in (
+      SELECT _object_key
+      FROM MGI_SetMember
+      WHERE _Set_key = 1058)
   ''' % (genes, seqsWithOneGene)
 
 typemap = {

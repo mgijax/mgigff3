@@ -70,7 +70,7 @@ class MgiComputedMerger:
             mgiid = self.seqid2gene[seqid]      # lookup the corresponding mgiid
             mfeats = self.mgi2feats[mgiid]      # list containing the gene followed by its match features
             if m.pctLength < MIN_PCT_LENGTH:
-                self.logRejects("REJECTING SEQUENCE for GENE (%s) - pctLength (%1.2f) less than minimum (%1.2f)" % (mgiid,m.pctLength,MIN_PCT_LENGTH))
+                self.logRejects("REJECTING SEQUENCE (%s) for GENE (%s) - pctLength (%1.2f) less than minimum (%1.2f)" % (seqid,mgiid,m.pctLength,MIN_PCT_LENGTH))
                 self.logRejects(str(m))
                 continue
             mfeats.append(m)
@@ -100,7 +100,7 @@ class MgiComputedMerger:
                 # chromosome: replace "chr5" for example with just "5"
                 m.seqid = m.seqid.replace("chr","")
                 if m.seqid != mf.seqid and mf.seqid != "UN":
-                    self.logRejects("REJECTING SEQUENCE for GENE (%s) - matches to different chromosome (%s) than MGI genetic chromosome (%s)" % (mgiid,m.seqid,mf.seqid))
+                    self.logRejects("REJECTING SEQUENCE (%s) for GENE (%s) - matches to different chromosome (%s) than MGI genetic chromosome (%s)" % (m.qName,mgiid,m.seqid,mf.seqid))
                 else:
                     ss.append(m)
             singles = ss
