@@ -22,6 +22,8 @@ else
 fi
 
 # ---------------------
+export MOUSE_ASSEMBLY="GRCm38"
+# ---------------------
 export MGI_HOST="${MGD_DBSERVER}"
 export MGI_DATABASE="${MGD_DBNAME}"
 export MGI_USER="${MGD_DBUSER}"
@@ -87,7 +89,7 @@ export MIRurl=ftp://mirbase.org/pub/mirbase/CURRENT/genomes/${MIRfile}
 export MIRprep="${PYTHON} ${BINDIR}/mirbasePrep.py"
 #
 export ENSEMBLver=101
-export ENSEMBLbuild=GRCm38
+export ENSEMBLbuild=${MOUSE_ASSEMBLY}
 export ENSEMBLfile=Mus_musculus.${ENSEMBLbuild}.${ENSEMBLver}.gff3
 export ENSEMBLurl=ftp://ftp.ensembl.org/pub/release-${ENSEMBLver}/gff3/mus_musculus/${ENSEMBLfile}.gz
 export ENSEMBLprep="${PYTHON} ${BINDIR}/ensemblPrep.py"
