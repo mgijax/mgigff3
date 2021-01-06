@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 #
-# refreshMgiComputed.sh
+# blatRefresh
 #
 # For the MGI genes that don't have a gene model from a provider, generates computed models
 # using Blat on selected sequences for the gene.

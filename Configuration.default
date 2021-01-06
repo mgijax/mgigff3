@@ -30,8 +30,9 @@ export MGI_USER="${MGD_DBUSER}"
 export MGI_PASSWORD=`cat "${MGD_DBPASSWORDFILE}"`
 # ---------------------
 export BLAT_MIN_IDENT=98
-export BLAT_MIN_LENGTH=90
+export BLAT_MIN_LENGTH=85
 export BLAT_ARGS="-nohead -minIdentity=${BLAT_MIN_IDENT} -dots=100"
+export PSLREPS_ARGS="-singleHit -nohead "
 # ---------------------
 export CURL=curl
 export CP=cp
@@ -56,8 +57,6 @@ export DATESTAMP=`${DATE} +"%Y-%m-%d"`
 export DATESTAMP2=`${DATE} +"%Y%m%d.%H%M%S"`
 export YEAR=`${DATE} +"%Y"`
 export YEARMONTH=`${DATE} +"%Y%m"`
-#
-export PSLREPS_ARGS="-singleHit -nohead "
 #
 # The chromosomes and their order.
 export CHRS=( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 X Y MT )
