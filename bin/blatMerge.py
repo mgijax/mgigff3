@@ -3,10 +3,11 @@
 #
 # Merges the filtered blat results (PSLFILE) with the gene data from MGI (MGISEQIDFILE)
 # and generates the MGI blatted model file.
+# It also generates a file suitable to use as input to the coordinate load process.
 #
 # Applies additional filters on the results.
 #
-# % python blatMerge.py PSLFILE MGISEQIDFILE > OUTFILE
+# % python blatMerge.py PSLFILE MGISEQIDFILE > OUTFILE C4AM_OUTFILE
 #
 # The file is sorted in the standard way.
 #
@@ -17,6 +18,9 @@ import gff3
 import psl
 
 MIN_PCT_LENGTH = float(os.environ['BLAT_MIN_LENGTH'])
+BUILD=os.environ['MOUSE_ASSEMBLY']
+MAP_COLLECTION_NAME=os.environ['BLAT_C4AM_COL6']
+MAP_COLLECTION_ABBREV=os.environ['BLAT_C4AM_COL7']
 
 class MgiComputedMerger:
     def __init__(self):
@@ -202,6 +206,7 @@ class MgiComputedMerger:
             return (s, ss)
         gffofd = open(self.outGffFile, 'w')
         c4amOfd = open(self.outC4amFile, 'w')
+        c4amOfd.write('build=%s\n' % BUILD)
         
         allFeats = self.mgi2feats.values()
         allFeats = list(filter(lambda x: "_rejected" not in x[0][8], allFeats))
@@ -216,14 +221,15 @@ class MgiComputedMerger:
             if "Parent" in attrs and len(attrs["Parent"]) > 0:
                 # f is not a top-level feature. Skip it.
                 continue
+            ###
             c4amRec = [
                 attrs["curie"],
                 mf.seqid,
                 str(mf.start),
                 str(mf.end),
                 "" if mf.strand == "." else mf.strand,
-                "MGI",
-                "MGI",
+                MAP_COLLECTION_NAME,
+                MAP_COLLECTION_ABBREV,
                 "",
                 "UN" if assigned else mf.seqid,
                 mf.Name,
