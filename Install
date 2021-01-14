@@ -21,6 +21,16 @@ then
     cp Configuration.default Configuration
 fi
 
+. Configuration
+
+# ---------------------
+${MKDIR} -p ${DATADIR}
+${MKDIR} -p ${WORKINGDIR}
+${MKDIR} -p ${DISTRIBDIR}
+${MKDIR} -p ${ARCHIVEDIR}
+${MKDIR} -p ${MONTHLYDIR}
+${MKDIR} -p ${ANNUALDIR}
+
 chmod 755 ./bin/refresh
 
 echo "Installation successful."

@@ -83,15 +83,6 @@ if [ $donothing == T ]; then
     exit 0
 fi
 
-
-# ---------------------
-${MKDIR} -p ${DATADIR}
-${MKDIR} -p ${WORKINGDIR}
-${MKDIR} -p ${DISTRIBDIR}
-${MKDIR} -p ${ARCHIVEDIR}
-${MKDIR} -p ${MONTHLYDIR}
-${MKDIR} -p ${ANNUALDIR}
-
 ########
 # truncate log file if we're doing a complete run
 if [ $nargs -eq 0 ]; then
