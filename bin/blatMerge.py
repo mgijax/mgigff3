@@ -16,6 +16,7 @@ import sys
 import os
 import gff3
 import psl
+from lib import mgiadhoc as db
 
 MIN_PCT_LENGTH = float(os.environ['BLAT_MIN_LENGTH'])
 BUILD=os.environ['MOUSE_ASSEMBLY']
@@ -30,10 +31,12 @@ class MgiComputedMerger:
         self.mgiFile = sys.argv[2]
         self.outGffFile = sys.argv[3]
         self.outC4amFile = sys.argv[4]
+        self.outDiffFile = self.outC4amFile.rsplit(".",1)[0] + ".diff.txt"
         self.seqid2gene = {}
         self.seqid2type = {}
         self.seqid2div = {}
         self.mgi2feats = {}
+        self.mgi2current = {}
 
     def log(self, m):
         sys.stderr.write(m)
@@ -79,6 +82,29 @@ class MgiComputedMerger:
                 continue
             mfeats.append(m)
             self.counts[seqid] = self.counts.setdefault(seqid, 0) + 1
+
+    def loadCurrentModels (self) :
+        q = '''
+            SELECT a.accid as "mgiid", m.symbol, mc.chromosome as "chr", f.startcoordinate as "start", f.endcoordinate as "end", f.strand
+            FROM
+               map_coord_collection cc,
+               map_coordinate c,
+               map_coord_feature f,
+               mrk_chromosome mc,
+               mrk_marker m,
+               acc_accession a
+            WHERE cc.name = '%s'
+            AND cc._collection_key = c._collection_key
+            AND c._object_key = mc._chromosome_key
+            AND c._map_key = f._map_key
+            AND f._object_key = m._marker_key
+            AND m._marker_key = a._object_key
+            AND a._mgitype_key = 2
+            AND a._logicaldb_key = 1
+            AND a.preferred = 1
+        ''' % MAP_COLLECTION_NAME
+        for r in db.sql(q) :
+            self.mgi2current[r['mgiid']] = (r['mgiid'], r['symbol'], r['chr'], int(r['start']), int(r['end']), r['strand'])
 
     def qNameNoVersion (self, f) :
         return f.qName.split(".")[0] 
@@ -207,10 +233,16 @@ class MgiComputedMerger:
         gffofd = open(self.outGffFile, 'w')
         c4amOfd = open(self.outC4amFile, 'w')
         c4amOfd.write('build=%s\n' % BUILD)
-        
+        #
+        self.openDiffLog()
+        # 
         allFeats = self.mgi2feats.values()
         allFeats = list(filter(lambda x: "_rejected" not in x[0][8], allFeats))
         allFeats.sort(key=topLevelKey)
+
+        writtenIds = set()
+
+
         for feats in allFeats:
             mf = feats[0]
             matches = feats[1:]
@@ -237,14 +269,70 @@ class MgiComputedMerger:
             ]
             c4amOfd.write("\t".join(c4amRec)+"\n")
             ###
+            newModel = (attrs["curie"], mf.Name, mf.seqid, mf.start, mf.end, None if mf.strand == "." else mf.strand)
+            currentModel = self.mgi2current.get(attrs["curie"], None)
+            if currentModel is None or newModel[2:] != currentModel[2:]:
+                self.noDiffs = False
+                self.writeDiff(currentModel, newModel)
+
+            ###
+            writtenIds.add(attrs["curie"])
             model = [mf]
             for m in matches:
                 model += gff3.flattenModel(m)
             for f in model:
                 gffofd.write(str(f))
             gffofd.write("###\n")
+        # end for loop
+
+        # check for/report deletes.
+        for mgiid, m in self.mgi2current.items():
+            if mgiid not in writtenIds:
+                self.noDiffs = False
+                self.writeDiff(m, None)
+        #
+        self.closeDiffLog()
+
+    def openDiffLog (self):
+        self.diffofd = open(self.outDiffFile, 'w')
+        self.noDiffs = True
+        self.diffofd.write('\t'.join([
+            "action",
+            "MGI_id",
+            "symbol",
+            "current_chr",
+            "current_start",
+            "current_end",
+            "current_strand",
+            "new_chr",
+            "new_start",
+            "new_end",
+            "new_strand",
+            ]) + '\n')
+
+    def closeDiffLog (self):
+        if self.noDiffs:
+            self.diffofd.write("No differences detected.\n")
+        self.diffofd.close()
+
+    def writeDiff (self, currentModel, newModel) :
+        #
+        action = "Added" if not currentModel else "Deleted" if not newModel else "Changed"
+        mgiid  = (newModel or currentModel)[0]
+        symbol = (newModel or currentModel)[1]
+        currentCoords = currentModel[2:] if currentModel else 4*['.']
+        newCoords = newModel[2:] if newModel else 4*['.']
+        #
+        self.diffofd.write('\t'.join([
+                action,
+                mgiid,
+                symbol,
+                '\t'.join(map(str, currentCoords)),
+                '\t'.join(map(str, newCoords)),
+            ]) + '\n')
 
     def main(self):
+        self.loadCurrentModels()
         self.loadSeqidFile()
         self.loadPslFile()
         self.processAlignments()
