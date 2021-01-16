@@ -23,6 +23,12 @@ BUILD=os.environ['MOUSE_ASSEMBLY']
 MAP_COLLECTION_NAME=os.environ['BLAT_C4AM_COL6']
 MAP_COLLECTION_ABBREV=os.environ['BLAT_C4AM_COL7']
 
+DOT = '.'
+SPACE = ' '
+COMMA = ','
+TAB = '\t'
+NL = '\n'
+
 class MgiComputedMerger:
     def __init__(self):
         if len(sys.argv) != 5:
@@ -31,12 +37,15 @@ class MgiComputedMerger:
         self.mgiFile = sys.argv[2]
         self.outGffFile = sys.argv[3]
         self.outC4amFile = sys.argv[4]
-        self.outDiffFile = self.outC4amFile.rsplit(".",1)[0] + ".diff.txt"
+        self.outDiffFile = self.outC4amFile.rsplit(DOT,1)[0] + ".diff.txt"
         self.seqid2gene = {}
+        self.gene2seqids = {}
         self.seqid2type = {}
         self.seqid2div = {}
         self.mgi2feats = {}
         self.mgi2current = {}
+        self.c4amOutBuffer = {}
+        self.diffOutBuffer = {}
 
     def log(self, m):
         sys.stderr.write(m)
@@ -48,8 +57,9 @@ class MgiComputedMerger:
     def loadSeqidFile(self):
         fd = open(self.mgiFile, 'r')
         for line in fd:
-            seqid, seq_type, division, mgiid, symbol, name, mgi_type, so_type, mgi_chr = line.strip().split("\t")
+            seqid, seq_type, division, mgiid, symbol, name, mgi_type, so_type, mgi_chr = line.strip().split(TAB)
             self.seqid2gene[seqid] = mgiid
+            self.gene2seqids.setdefault(mgiid, []).append(seqid)
             self.seqid2type[seqid] = seq_type
             self.seqid2div[seqid] = division
             feat = self.mgi2feats.get(mgiid, None)
@@ -73,7 +83,7 @@ class MgiComputedMerger:
         self.counts = {}
         for m in gff3.models(psl.toGff(self.pslFile)):
             # 
-            seqid = m.qName.split(".")[0]       # get the seqid w/o version number
+            seqid = m.qName.split(DOT)[0]       # get the seqid w/o version number
             mgiid = self.seqid2gene[seqid]      # lookup the corresponding mgiid
             mfeats = self.mgi2feats[mgiid]      # list containing the gene followed by its match features
             if m.pctLength < MIN_PCT_LENGTH:
@@ -104,16 +114,16 @@ class MgiComputedMerger:
             AND a.preferred = 1
         ''' % MAP_COLLECTION_NAME
         for r in db.sql(q) :
-            self.mgi2current[r['mgiid']] = (r['mgiid'], r['symbol'], r['chr'], int(r['start']), int(r['end']), r['strand'])
+            self.mgi2current[r['mgiid']] = (r['mgiid'], r['symbol'], [], r['chr'], int(r['start']), int(r['end']), r['strand'])
 
     def qNameNoVersion (self, f) :
-        return f.qName.split(".")[0] 
+        return f.qName.split(DOT)[0] 
 
-    def logRejects (self, msg, rejects = None, sep='\n') :
+    def logRejects (self, msg, rejects = None, sep=NL) :
         self.log(msg)
         if rejects and len(rejects) > 0:
             self.log(sep.join([str(s) for s in rejects]))
-        self.log('\n')
+        self.log(NL)
         
     def processAlignments (self) :    
         for mgiid, mfeats in list(self.mgi2feats.items()):
@@ -205,17 +215,17 @@ class MgiComputedMerger:
                 mfeats[1:] = rnaSingles
             elif len(estSingles) > 0 :
                 self.log("GENE (%s) - only has EST%s matches. Setting strand to '.'\n" % (mgiid, " and DNA" if len(dnaSingles) else ''))
-                mf.strand = "."
+                mf.strand = DOT
                 for ff in estSingles:
                   for fff in gff3.flattenModel(ff):
-                      fff.strand = "."
+                      fff.strand = DOT
                 mfeats[1:] = estSingles
             else:
                 self.log("GENE (%s) - only has DNA matches. Setting strand to '.'\n" % mgiid)
-                mf.strand = "."
+                mf.strand = DOT
                 for ff in dnaSingles:
                   for fff in gff3.flattenModel(ff):
-                      fff.strand = "."
+                      fff.strand = DOT
                 mfeats[1:] = dnaSingles
 
             # Update the gene-level feature
@@ -230,106 +240,131 @@ class MgiComputedMerger:
             if len(s) == 1 and s.isdigit():
                 s = "0" + s
             return (s, ss)
-        gffofd = open(self.outGffFile, 'w')
-        c4amOfd = open(self.outC4amFile, 'w')
-        c4amOfd.write('build=%s\n' % BUILD)
+        self.gffofd = open(self.outGffFile, 'w')
+        self.c4amOfd = open(self.outC4amFile, 'w')
+        self.c4amOfd.write('build=%s\n' % BUILD)
         #
         self.openDiffLog()
         # 
         allFeats = self.mgi2feats.values()
         allFeats = list(filter(lambda x: "_rejected" not in x[0][8], allFeats))
         allFeats.sort(key=topLevelKey)
-
-        writtenIds = set()
-
-
+        #
+        self.writtenIds = set()
         for feats in allFeats:
             mf = feats[0]
             matches = feats[1:]
             #
             seqids = list(map(lambda m: m.Name, matches))
             attrs = mf.attributes
-            assigned = attrs.pop("_assigned", False)
             if "Parent" in attrs and len(attrs["Parent"]) > 0:
                 # f is not a top-level feature. Skip it.
                 continue
-            ###
-            c4amRec = [
-                attrs["curie"],
-                mf.seqid,
-                str(mf.start),
-                str(mf.end),
-                "" if mf.strand == "." else mf.strand,
-                MAP_COLLECTION_NAME,
-                MAP_COLLECTION_ABBREV,
-                "",
-                "UN" if assigned else mf.seqid,
-                mf.Name,
-                ','.join(seqids)
-            ]
-            c4amOfd.write("\t".join(c4amRec)+"\n")
-            ###
-            newModel = (attrs["curie"], mf.Name, mf.seqid, mf.start, mf.end, None if mf.strand == "." else mf.strand)
-            currentModel = self.mgi2current.get(attrs["curie"], None)
-            if currentModel is None or newModel[2:] != currentModel[2:]:
-                self.noDiffs = False
-                self.writeDiff(currentModel, newModel)
-
-            ###
-            writtenIds.add(attrs["curie"])
-            model = [mf]
-            for m in matches:
-                model += gff3.flattenModel(m)
-            for f in model:
-                gffofd.write(str(f))
-            gffofd.write("###\n")
+            self.writeC4am(mf, seqids)
+            self.writeGff3(mf, matches)
         # end for loop
-
-        # check for/report deletes.
-        for mgiid, m in self.mgi2current.items():
-            if mgiid not in writtenIds:
-                self.noDiffs = False
-                self.writeDiff(m, None)
         #
         self.closeDiffLog()
+        self.closeC4amFile()
+
+    def writeGff3 (self, mf, matches) :
+        model = [mf]
+        for m in matches:
+            model += gff3.flattenModel(m)
+        for f in model:
+            self.gffofd.write(str(f))
+        self.gffofd.write("###\n")
+
+    def writeC4am (self, mf, seqids) :
+        self.writtenIds.add(mf.curie)
+        ###
+        newCoords = (mf.curie, mf.Name, seqids, mf.seqid, mf.start, mf.end, None if mf.strand == DOT else mf.strand)
+        currCoords = self.mgi2current.get(mf.curie, None)
+        action = "Unchanged"
+        if currCoords is None or newCoords is None or newCoords[3:] != currCoords[3:]:
+            action = "Added" if not currCoords else "Deleted" if not newCoords else "Changed"
+            self.writeDiff(action, currCoords, newCoords)
+        ###
+        assigned = mf.attributes.pop("_assigned", False)
+        c4amRec = [
+            mf.curie,
+            mf.seqid,
+            str(mf.start),
+            str(mf.end),
+            "" if mf.strand == DOT else mf.strand,
+            MAP_COLLECTION_NAME,
+            MAP_COLLECTION_ABBREV,
+            "",
+            action,
+            "UN" if assigned else mf.seqid,
+            mf.Name,
+            ','.join(seqids)
+        ]
+        self.c4amOutBuffer.setdefault(action,[]).append(c4amRec)
+
+    def closeC4amFile(self):
+        ks = list(self.c4amOutBuffer.keys())
+        ks.sort()
+        for action in ks:
+            for r in self.c4amOutBuffer[action]:
+                self.c4amOfd.write(TAB.join(r)+NL)
 
     def openDiffLog (self):
         self.diffofd = open(self.outDiffFile, 'w')
         self.noDiffs = True
-        self.diffofd.write('\t'.join([
+        self.diffofd.write(TAB.join([
             "action",
             "MGI_id",
             "symbol",
-            "current_chr",
-            "current_start",
-            "current_end",
-            "current_strand",
-            "new_chr",
-            "new_start",
-            "new_end",
-            "new_strand",
-            ]) + '\n')
 
-    def closeDiffLog (self):
-        if self.noDiffs:
-            self.diffofd.write("No differences detected.\n")
-        self.diffofd.close()
+            "prod_seqids",
+            "prod_chr",
+            "prod_start",
+            "prod_end",
+            "prod_strand",
 
-    def writeDiff (self, currentModel, newModel) :
+            "blat_seqids",
+            "blat_chr",
+            "blat_start",
+            "blat_end",
+            "blat_strand",
+            ]) + NL)
+
+    def writeDiff (self, action, currCoords, newCoords) :
+        self.noDiffs = False
         #
-        action = "Added" if not currentModel else "Deleted" if not newModel else "Changed"
-        mgiid  = (newModel or currentModel)[0]
-        symbol = (newModel or currentModel)[1]
-        currentCoords = currentModel[2:] if currentModel else 4*['.']
-        newCoords = newModel[2:] if newModel else 4*['.']
+        mgiid  = (newCoords or currCoords)[0]
+        symbol = (newCoords or currCoords)[1]
+        currentCoords = currCoords[3:] if currCoords else 4*[DOT]
+        newSeqids = SPACE.join(newCoords[2]) if newCoords else DOT
+        allSeqids = SPACE.join(self.gene2seqids[mgiid]) if mgiid in self.gene2seqids else DOT
+        newCoords = newCoords[3:] if newCoords else 4*[DOT]
         #
-        self.diffofd.write('\t'.join([
+        self.diffOutBuffer.setdefault(action, []).append(TAB.join([
                 action,
                 mgiid,
                 symbol,
-                '\t'.join(map(str, currentCoords)),
-                '\t'.join(map(str, newCoords)),
-            ]) + '\n')
+                allSeqids,
+                TAB.join(map(str, currentCoords)),
+                newSeqids,
+                TAB.join(map(str, newCoords)),
+            ]) + NL)
+
+    def closeDiffLog (self):
+        # check for/report deletes.
+        for mgiid, m in self.mgi2current.items():
+            if mgiid not in self.writtenIds:
+                self.writeDiff('Deleted', m, None)
+        #
+        ks = list(self.diffOutBuffer.keys())
+        if len(ks) == 0:
+            self.diffofd.write("No differences detected.\n")
+        else:
+            ks.sort()
+            for action in ks:
+                for line in self.diffOutBuffer[action]:
+                    self.diffofd.write(line)
+        self.diffofd.close()
 
     def main(self):
         self.loadCurrentModels()
