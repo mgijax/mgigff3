@@ -1,7 +1,6 @@
 #!/usr/bin/bash
-
-# https://stackoverflow.com/questions/59895/getting-the-source-directory-of-a-bash-script-from-within
-export DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd ".." && pwd )"
+cd `dirname $0`/..
+export DIR=`pwd`
 
 if [ ! -r ${DIR}/Configuration ] ; then
     echo "Cannot read Configuration file."

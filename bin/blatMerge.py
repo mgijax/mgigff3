@@ -3,9 +3,31 @@
 #
 # Merges the filtered blat results (PSLFILE) with the gene data from MGI (MGISEQIDFILE)
 # and generates the MGI blatted model file.
-# It also generates a file suitable to use as input to the coordinate load process.
 #
-# Applies additional filters on the results.
+# It also generates a file suitable to use as input to the mrkcoordload process.
+# This first 8 columns are defined by the load.
+# We use additional columns to report differences between the new blat models and what's in
+# the database.
+#       1. mgiid
+#       2. chromosome
+#       3. start
+#       4. end
+#       5. strand
+#       6. map_collection_name
+#       7. map_abbreviation
+#       8. mirbase_id (unused here)
+# --
+#       9. action:  Added, Deleted, or Changed
+#       10. blat_seqids: space-separate list of sequence ids used in the blat model
+#       11. db_seqids: space-separated list of all candidate sequence ids associed with this gene in the db
+#       12. db_chr:  coordinates for this gene as stored in the db
+#       13. db_start:
+#       14. db_end
+#       15. db_strand
+# If col 9 is blank (no change), columns 10-15 are blank
+# If col 9 = Added, cols 12-15 are blank
+# If col 9 = Deleted, cols 2-5 are blank
+# If col 9 = Changed, cols 2-5 and 12-15 are filled in
 #
 # % python blatMerge.py PSLFILE MGISEQIDFILE > OUTFILE C4AM_OUTFILE
 #
@@ -37,15 +59,13 @@ class MgiComputedMerger:
         self.mgiFile = sys.argv[2]
         self.outGffFile = sys.argv[3]
         self.outC4amFile = sys.argv[4]
-        self.outDiffFile = self.outC4amFile.rsplit(DOT,1)[0] + ".diff.txt"
         self.seqid2gene = {}
-        self.gene2seqids = {}
         self.seqid2type = {}
         self.seqid2div = {}
         self.mgi2feats = {}
+        self.mgi2seqids = {}
         self.mgi2current = {}
         self.c4amOutBuffer = {}
-        self.diffOutBuffer = {}
 
     def log(self, m):
         sys.stderr.write(m)
@@ -59,7 +79,7 @@ class MgiComputedMerger:
         for line in fd:
             seqid, seq_type, division, mgiid, symbol, name, mgi_type, so_type, mgi_chr = line.strip().split(TAB)
             self.seqid2gene[seqid] = mgiid
-            self.gene2seqids.setdefault(mgiid, []).append(seqid)
+            self.mgi2seqids.setdefault(mgiid, []).append(seqid)
             self.seqid2type[seqid] = seq_type
             self.seqid2div[seqid] = division
             feat = self.mgi2feats.get(mgiid, None)
@@ -93,7 +113,7 @@ class MgiComputedMerger:
             mfeats.append(m)
             self.counts[seqid] = self.counts.setdefault(seqid, 0) + 1
 
-    def loadCurrentModels (self) :
+    def loadCurrentCoordinates (self) :
         q = '''
             SELECT a.accid as "mgiid", m.symbol, mc.chromosome as "chr", f.startcoordinate as "start", f.endcoordinate as "end", f.strand
             FROM
@@ -114,7 +134,17 @@ class MgiComputedMerger:
             AND a.preferred = 1
         ''' % MAP_COLLECTION_NAME
         for r in db.sql(q) :
-            self.mgi2current[r['mgiid']] = (r['mgiid'], r['symbol'], [], r['chr'], int(r['start']), int(r['end']), r['strand'])
+            self.mgi2current[r['mgiid']] = gff3.Feature([
+                r['chr'],
+                'mgi',
+                '.',
+                int(r['start']),
+                int(r['end']),
+                '.',
+                DOT if r['strand'] is None else r['strand'],
+                '.',
+                { 'curie': r['mgiid'] }
+            ])
 
     def qNameNoVersion (self, f) :
         return f.qName.split(DOT)[0] 
@@ -164,7 +194,6 @@ class MgiComputedMerger:
             # If MGI chr is UN, assign the chromosome based on the blat hit
             if mf.seqid == "UN":
                 mf.seqid = list(chroms)[0]
-                mf._assigned = True
                 self.log("ASSIGNING CHROMOSOME (%s) to gene (%s) - was UN.\n" % (mf.seqid, mgiid))
 
             # tweak the models
@@ -243,8 +272,6 @@ class MgiComputedMerger:
         self.gffofd = open(self.outGffFile, 'w')
         self.c4amOfd = open(self.outC4amFile, 'w')
         self.c4amOfd.write('build=%s\n' % BUILD)
-        #
-        self.openDiffLog()
         # 
         allFeats = self.mgi2feats.values()
         allFeats = list(filter(lambda x: "_rejected" not in x[0][8], allFeats))
@@ -255,7 +282,7 @@ class MgiComputedMerger:
             mf = feats[0]
             matches = feats[1:]
             #
-            seqids = list(map(lambda m: m.Name, matches))
+            seqids = list(map(lambda m: m.Name.split(DOT)[0], matches))
             attrs = mf.attributes
             if "Parent" in attrs and len(attrs["Parent"]) > 0:
                 # f is not a top-level feature. Skip it.
@@ -264,7 +291,6 @@ class MgiComputedMerger:
             self.writeGff3(mf, matches)
         # end for loop
         #
-        self.closeDiffLog()
         self.closeC4amFile()
 
     def writeGff3 (self, mf, matches) :
@@ -276,16 +302,42 @@ class MgiComputedMerger:
         self.gffofd.write("###\n")
 
     def writeC4am (self, mf, seqids) :
+        #
         self.writtenIds.add(mf.curie)
+        #
+        blat_seqids = SPACE.join(seqids or [])
+        db_seqids = SPACE.join(self.mgi2seqids.get(mf.curie, []))
+        cf = self.mgi2current.get(mf.curie, None) # current coordinates
+        if cf is None:
+            xtra = [
+              "added",
+              blat_seqids,
+              db_seqids,
+            ]
+        elif seqids is None:
+            xtra = [
+              "deleted",
+              blat_seqids,
+              db_seqids,
+              cf.seqid,
+              str(cf.start),
+              str(cf.end),
+              str(cf.strand)
+            ]
+        elif mf.seqid != cf.seqid or mf.start != cf.start or mf.end != cf.end or mf.strand != cf.strand:
+            xtra = [
+              "changed",
+              blat_seqids,
+              db_seqids,
+              cf.seqid,
+              str(cf.start),
+              str(cf.end),
+              str(cf.strand)
+            ]
+        else:
+            xtra = [ "unchanged" ]
+
         ###
-        newCoords = (mf.curie, mf.Name, seqids, mf.seqid, mf.start, mf.end, None if mf.strand == DOT else mf.strand)
-        currCoords = self.mgi2current.get(mf.curie, None)
-        action = "Unchanged"
-        if currCoords is None or newCoords is None or newCoords[3:] != currCoords[3:]:
-            action = "Added" if not currCoords else "Deleted" if not newCoords else "Changed"
-            self.writeDiff(action, currCoords, newCoords)
-        ###
-        assigned = mf.attributes.pop("_assigned", False)
         c4amRec = [
             mf.curie,
             mf.seqid,
@@ -295,79 +347,25 @@ class MgiComputedMerger:
             MAP_COLLECTION_NAME,
             MAP_COLLECTION_ABBREV,
             "",
-            action,
-            "UN" if assigned else mf.seqid,
-            mf.Name,
-            ','.join(seqids)
         ]
-        self.c4amOutBuffer.setdefault(action,[]).append(c4amRec)
+        if xtra[0] == "deleted":
+            c4amRec[1] = c4amRec[2] = c4amRec[3] = c4amRec[4] = ""
+        self.c4amOutBuffer.setdefault(xtra[0], []).append(c4amRec + xtra)
 
     def closeC4amFile(self):
+        for mgiid, cf in self.mgi2current.items():
+            if not mgiid in self.writtenIds:
+                self.writeC4am(cf, None)
+        #
         ks = list(self.c4amOutBuffer.keys())
         ks.sort()
         for action in ks:
             for r in self.c4amOutBuffer[action]:
-                self.c4amOfd.write(TAB.join(r)+NL)
-
-    def openDiffLog (self):
-        self.diffofd = open(self.outDiffFile, 'w')
-        self.noDiffs = True
-        self.diffofd.write(TAB.join([
-            "action",
-            "MGI_id",
-            "symbol",
-
-            "prod_seqids",
-            "prod_chr",
-            "prod_start",
-            "prod_end",
-            "prod_strand",
-
-            "blat_seqids",
-            "blat_chr",
-            "blat_start",
-            "blat_end",
-            "blat_strand",
-            ]) + NL)
-
-    def writeDiff (self, action, currCoords, newCoords) :
-        self.noDiffs = False
-        #
-        mgiid  = (newCoords or currCoords)[0]
-        symbol = (newCoords or currCoords)[1]
-        currentCoords = currCoords[3:] if currCoords else 4*[DOT]
-        newSeqids = SPACE.join(newCoords[2]) if newCoords else DOT
-        allSeqids = SPACE.join(self.gene2seqids[mgiid]) if mgiid in self.gene2seqids else DOT
-        newCoords = newCoords[3:] if newCoords else 4*[DOT]
-        #
-        self.diffOutBuffer.setdefault(action, []).append(TAB.join([
-                action,
-                mgiid,
-                symbol,
-                allSeqids,
-                TAB.join(map(str, currentCoords)),
-                newSeqids,
-                TAB.join(map(str, newCoords)),
-            ]) + NL)
-
-    def closeDiffLog (self):
-        # check for/report deletes.
-        for mgiid, m in self.mgi2current.items():
-            if mgiid not in self.writtenIds:
-                self.writeDiff('Deleted', m, None)
-        #
-        ks = list(self.diffOutBuffer.keys())
-        if len(ks) == 0:
-            self.diffofd.write("No differences detected.\n")
-        else:
-            ks.sort()
-            for action in ks:
-                for line in self.diffOutBuffer[action]:
-                    self.diffofd.write(line)
-        self.diffofd.close()
+                prefix = "#" if action == "deleted" else ""
+                self.c4amOfd.write(prefix + TAB.join(r)+NL)
 
     def main(self):
-        self.loadCurrentModels()
+        self.loadCurrentCoordinates()
         self.loadSeqidFile()
         self.loadPslFile()
         self.processAlignments()
