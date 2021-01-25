@@ -65,6 +65,7 @@ class MgiComputedMerger:
         self.mgi2feats = {}
         self.mgi2seqids = {}
         self.mgi2current = {}
+        self.mgi2mirbase = {}
         self.c4amOutBuffer = {}
 
     def log(self, m):
@@ -112,6 +113,22 @@ class MgiComputedMerger:
                 continue
             mfeats.append(m)
             self.counts[seqid] = self.counts.setdefault(seqid, 0) + 1
+
+    def loadMirbaseIDs (self) :
+        # query to return all MGIid/miRBaseid pairs. We need this to fill in column 8 for the C4AM output file. 
+        q = '''
+        SELECT ra.accid as mirbase, ma.accid as mgiid
+        FROM ACC_Accession ra, ACC_Accession ma
+        WHERE ra._object_key = ma._object_key
+        AND ra._mgitype_key = 2
+        AND ra._logicaldb_key = 83
+        AND ra.preferred = 1
+        AND ma._mgitype_key = 2
+        AND ma._logicaldb_key = 1
+        AND ma.preferred = 1
+        '''
+        for r in db.sql(q):
+            self.mgi2mirbase.setdefault(r['mgiid'], []).append(r['mirbase'])
 
     def loadCurrentCoordinates (self) :
         q = '''
@@ -346,7 +363,9 @@ class MgiComputedMerger:
             "" if mf.strand == DOT else mf.strand,
             MAP_COLLECTION_NAME,
             MAP_COLLECTION_ABBREV,
-            "",
+
+            # Not that we expect any of the genes in this output to have miRBase ids, but if they do, they need to go in column 8.
+            ",".join(self.mgi2mirbase.get(mf.curie,[]))
         ]
         if xtra[0] == "deleted":
             c4amRec[1] = c4amRec[2] = c4amRec[3] = c4amRec[4] = ""
@@ -367,8 +386,11 @@ class MgiComputedMerger:
     def main(self):
         self.loadCurrentCoordinates()
         self.loadSeqidFile()
+        self.loadMirbaseIDs()
         self.loadPslFile()
         self.processAlignments()
         self.output()
 
-MgiComputedMerger().main()
+#
+m = MgiComputedMerger()
+m.main()
