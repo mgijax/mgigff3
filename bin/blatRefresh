@@ -67,5 +67,10 @@ logit "Blat models: Generating models file and C4AM coordinates file..."
 ${PYTHON} ${BINDIR}/blatMerge.py ${WORKINGDIR}/blat.pslreps.psl ${WORKINGDIR}/blat.seqids.txt ${BLAT_OFILE} ${C4AM_OFILE}
 checkExit
 
+# 4. Grep the log to generate report of genes rejected by blat phase.
+logit "Blat models: Generating rejects report..."
+grep "REJECTING GENE" ${WORKINGDIR}/refresh.log | sed "s/.*\(MGI:[0-9]*\).*-\(.*\)/\1\t\2/" > ${WORKINGDIR}/blat.rejects.txt
+checkExit
+
 logit "Blat models: finished."
 
