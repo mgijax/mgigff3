@@ -221,9 +221,9 @@ if [ $nargs -eq 0 -o $domgi == T ]; then
 END1
     checkExit
 
-    logit "Counting mgi features..."
-    ${COUNTCMD} ${WORKINGDIR}/mgi.gff > ${WORKINGDIR}/mgi.counts.txt
-    checkExit
+    #logit "Counting mgi features..."
+    #${COUNTCMD} ${WORKINGDIR}/mgi.gff > ${WORKINGDIR}/mgi.counts.txt 2>> ${LOGFILE}
+    #checkExit
 fi
 
 ########

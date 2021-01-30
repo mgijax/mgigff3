@@ -121,8 +121,8 @@ def main () :
       symbol = rec['symbol']
       name = rec['name']
       chr = rec['chromosome']
-      start = int(rec['startcoordinate'])
-      end = int(rec['endcoordinate'])
+      start = '.' if rec['startcoordinate'] is None else int(rec['startcoordinate'])
+      end   = '.' if rec['endcoordinate']   is None else int(rec['endcoordinate'])
       strand = rec['strand']
       if strand is None:
         sys.stderr.write("null strand: " + str(rec) + "\n")
