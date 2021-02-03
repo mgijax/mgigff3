@@ -15,6 +15,7 @@
 import sys
 from lib import mgiadhoc as db
 from lib import gff3
+from lib import mcv2so
 
 geneModelLdbKeys = '59,60,83' # Ensembl gene model, NCBI gene model, miRBase
 ldbkey2prefix = {
@@ -72,40 +73,6 @@ mgiModelIds = '''
     and aa2.preferred = 1
 ''' % geneModelLdbKeys
 
-# FIXME. This mapping should come out of the database. For now hardcode it. FIXME.
-mcv2soData = [
-    # ['MCV term', 'SO term', 'SO id']
-    ['antisense lncRNA gene', 'antisense_lncRNA_gene', 'SO:0002182'],
-    ['bidirectional promoter lncRNA gene', 'bidirectional_promoter_lncRNA', 'SO:0002185'],
-    ['gene', 'gene', 'SO:0000704'],
-    ['gene segment', 'gene_segment', 'SO:3000000'],
-    ['lincRNA gene', 'lincRNA_gene', 'SO:0001641'],
-    ['lncRNA gene', 'lncRNA_gene', 'SO:0002127'],
-    ['miRNA gene', 'miRNA_gene', 'SO:0001265'],
-    ['non-coding RNA gene', 'ncRNA_gene', 'SO:0001263'],
-    ['polymorphic pseudogene', 'polymorphic_pseudogene', 'SO:0001841'],
-    ['protein coding gene', 'protein_coding_gene', 'SO:0001217'],
-    ['pseudogene', 'pseudogene', 'SO:0000336'],
-    ['pseudogenic gene segment', 'pseudogenic_gene_segment', 'SO:0001741'],
-    ['rRNA gene', 'rRNA_gene', 'SO:0001637'],
-    ['ribozyme gene', 'ribozyme_gene', 'SO:0002181'],
-    ['RNase MRP RNA gene', 'RNase_MRP_RNA_gene', 'SO:0001640'],
-    ['RNase P RNA gene', 'RNase_P_RNA_gene', 'SO:0001639'],
-    ['scRNA gene', 'scRNA_gene', 'SO:0001266'],
-    ['sense intronic lncRNA gene', 'sense_intronic_ncRNA_gene', 'SO:0002184'],
-    ['sense overlapping lncRNA gene', 'sense_overlap_ncRNA_gene', 'SO:0002183'],
-    ['snRNA gene', 'snRNA_gene', 'SO:0001268'],
-    ['snoRNA gene', 'snoRNA_gene', 'SO:0001267'],
-    ['SRP RNA gene', 'SRP_RNA_gene', 'SO:0001269'],
-    ['tRNA gene', 'tRNA_gene', 'SO:0001272'],
-    ['telomerase RNA gene', 'telomerase_RNA_gene', 'SO:0001643'],
-    ['unclassified gene', 'gene', 'SO:0000704'],
-    ['unclassified non-coding RNA gene', 'ncRNA_gene', 'SO:0001263'],
-]
-mcv2so = {}
-for r in mcv2soData:
-  mcv2so[r[0]] = r[1]
-
 def main () :
     # Read the MGI/model id pairs. Build index from MGI id -> list of model ids
     ix = {}
@@ -129,6 +96,7 @@ def main () :
         strand = '.'
       markertype = rec['markertype']
       mcvtype = rec['mcvtype']
+      so_term_name = mcv2so.mcv2so[mcvtype]
       attrs = dict([
         # mint a B6 strain-specific ID from the MGI ID
         ['ID', 'MGI_C57BL6J_' + mgiid[4:]],
@@ -146,7 +114,7 @@ def main () :
         ['mgi_type', mcvtype],
         # a bona fide SO term corresponding to mgi_type
         # Throw an error if there is no mapping for this MCV term.
-        ['so_term_name', mcv2so[mcvtype]]
+        ['so_term_name', so_term_name]
       ])
       gffrec = [
         chr,

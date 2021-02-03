@@ -22,6 +22,7 @@
 
 import sys
 from lib import mgiadhoc as db
+from lib import mcv2so
 
 # Genes and pseudogenes.
 # Exclude miRNA and tRNA genes.
@@ -99,34 +100,13 @@ sequences = '''
       WHERE _Set_key = 1058)
   ''' % (genes, seqsWithOneGene)
 
-typemap = {
-  'antisense lncRNA gene'       : 'lncRNA_gene',
-  'gene segment'                : 'gene_segment',
-  'heritable phenotypic marker' : 'heritable_phenotypic_marker',
-  'intronic lncRNA gene'        : 'lncRNA_gene',
-  'lincRNA gene'                : 'lincRNA_gene',
-  'lncRNA gene'                 : 'lncRNA_gene',
-  'miRNA gene'                  : 'miRNA_gene',
-  'non-coding RNA gene'         : 'ncRNA_gene',
-  'polymorphic pseudogene'      : 'polymorphic_pseudogene',
-  'protein coding gene'         : 'protein_coding_gene',
-  'pseudogene'                  : 'pseudogene',
-  'pseudogenic gene segment'    : 'pseudogenic_gene_segment',
-  'rRNA gene'                   : 'rRNA_gene',
-  'snoRNA gene'                 : 'snoRNA_gene',
-  'tRNA gene'                   : 'tRNA_gene',
-  'unclassified gene'           : 'gene',
-  'unclassified non-coding RNA gene' : 'ncRNA_gene',
-  'sense intronic lncRNA gene' : 'lncRNA_gene',
-}
-
 genesWithModels = set([ mid.strip() for mid in sys.stdin ])
 
 for r in db.sql(sequences):
     if r["markerid"] in genesWithModels:
         continue
     mcvtype = r["mcv_type"]
-    sotype  = typemap[mcvtype]
+    sotype  = mcv2so.mcv2so[mcvtype]
     line = [
       r["sequenceid"],
       r["seq_type"],
