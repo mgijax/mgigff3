@@ -108,7 +108,9 @@ class MgiComputedMerger:
             mgiid = self.seqid2gene[seqid]      # lookup the corresponding mgiid
             mfeats = self.mgi2feats[mgiid]      # list containing the gene followed by its match features
             if m.pctLength < MIN_PCT_LENGTH:
-                self.logRejects("REJECTING SEQUENCE (%s) for GENE (%s) - pctLength (%1.2f) less than minimum (%1.2f)" % (seqid,mgiid,m.pctLength,MIN_PCT_LENGTH))
+                self.logRejects(
+                    "REJECTING SEQUENCE (%s) for GENE (%s) - pctLength (%1.2f) less than minimum (%1.2f)"
+                    % (seqid,mgiid,m.pctLength,MIN_PCT_LENGTH))
                 self.logRejects(str(m))
                 continue
             mfeats.append(m)
@@ -180,14 +182,18 @@ class MgiComputedMerger:
             singles = [m for m in mfeats[1:] if self.counts[self.qNameNoVersion(m)] == 1]
             multiples = [m for m in mfeats[1:] if self.counts[self.qNameNoVersion(m)] > 1]
             if len(multiples) :
-                self.logRejects("REJECTING SEQUENCES for GENE (%s) - multiple matches per sequence: %s" % (mgiid, set([ m.qName for m in multiples ])))
+                self.logRejects(
+                    "REJECTING SEQUENCES for GENE (%s) - multiple matches per sequence: %s" 
+                    % (mgiid, set([ m.qName for m in multiples ])))
             # Remove single best hits to chromosome different from mgi genetic chromosome.
             ss = []
             for m in singles:
                 # chromosome: replace "chr5" for example with just "5"
                 m.seqid = m.seqid.replace("chr","")
                 if m.seqid != mf.seqid and mf.seqid != "UN":
-                    self.logRejects("REJECTING SEQUENCE (%s) for GENE (%s) - matches to different chromosome (%s) than MGI genetic chromosome (%s)" % (m.qName,mgiid,m.seqid,mf.seqid))
+                    self.logRejects(
+                        "REJECTING SEQUENCE (%s) for GENE (%s) - matches to different chromosome (%s) than MGI genetic chromosome (%s)"
+                        % (m.qName,mgiid,m.seqid,mf.seqid))
                 else:
                     ss.append(m)
             singles = ss
@@ -195,16 +201,22 @@ class MgiComputedMerger:
             # if no single matches, reject the gene
             if len(singles) == 0:
                 if len(multiples):
-                    self.logRejects("REJECTING GENE (%s) - Only nonunique matches." % mgiid)
+                    self.logRejects(
+                        "REJECTING GENE (%s) - Only nonunique matches."
+                        % mgiid)
                 else:
-                    self.logRejects("REJECTING GENE (%s) - No matches." % mgiid)
+                    self.logRejects(
+                        "REJECTING GENE (%s) - No matches."
+                        % mgiid)
                 mf._rejected = True
                 continue
 
             # if singles do not all agree on chromosome, reject the gene
             chroms = set([ s.seqid for s in singles ])
             if len(chroms) > 1:
-                self.logRejects("REJECTING GENE (%s) - Sequences match to multiple chromosomes: %s " % (mgiid, set([ m.qName for m in singles ])))
+                self.logRejects(
+                    "REJECTING GENE (%s) - Sequences match to multiple chromosomes: %s "
+                    % (mgiid, set([ m.qName for m in singles ])))
                 mf._rejected = True
                 continue
 
@@ -254,7 +266,9 @@ class MgiComputedMerger:
             if len(rnaSingles) > 0 :
                 strands = set([ s.strand for s in rnaSingles ])
                 if len(strands) > 1 :
-                    self.logRejects("REJECTING GENE (%s) - RNA sequences match to both strands: %s" % (mgiid, set([r.qName for r in rnaSingles])))
+                    self.logRejects(
+                        "REJECTING GENE (%s) - RNA sequences match to both strands: %s"
+                        % (mgiid, set([r.qName for r in rnaSingles])))
                     mf._rejected = True
                     continue
                 mf.strand = list(strands)[0]
@@ -299,12 +313,11 @@ class MgiComputedMerger:
             mf = feats[0]
             matches = feats[1:]
             #
-            seqids = list(map(lambda m: m.Name.split(DOT)[0], matches))
             attrs = mf.attributes
             if "Parent" in attrs and len(attrs["Parent"]) > 0:
                 # f is not a top-level feature. Skip it.
                 continue
-            self.writeC4am(mf, seqids)
+            self.writeC4am(mf, matches)
             self.writeGff3(mf, matches)
         # end for loop
         #
@@ -318,7 +331,9 @@ class MgiComputedMerger:
             self.gffofd.write(str(f))
         self.gffofd.write("###\n")
 
-    def writeC4am (self, mf, seqids) :
+    def writeC4am (self, mf, matches) :
+        matches = matches if matches else []
+        seqids = list(map(lambda m: m.Name.split(DOT)[0], matches))
         #
         self.writtenIds.add(mf.curie)
         #
