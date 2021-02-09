@@ -162,7 +162,7 @@ class MgiComputedMerger:
                 '.',
                 DOT if r['strand'] is None else r['strand'],
                 '.',
-                { 'curie': r['mgiid'] }
+                { 'curie': r['mgiid'], 'Name': r['symbol'] }
             ])
 
     def qNameNoVersion (self, f) :
@@ -331,43 +331,55 @@ class MgiComputedMerger:
             self.gffofd.write(str(f))
         self.gffofd.write("###\n")
 
-    def writeC4am (self, mf, matches) :
-        matches = matches if matches else []
-        seqids = list(map(lambda m: m.Name.split(DOT)[0], matches))
+    def writeC4am (self, mf, matches0) :
+        matches = matches0 if matches0 else []
+        plainSeqId = lambda m: m.Name.split(DOT)[0]
+        fmt = lambda m: "%s|%1.2f|%1.2f" % (plainSeqId(m), m.pctIdentity, m.pctLength)
+        alignSeqIds = list(map(plainSeqId, matches))
+        alignData = list(map(fmt, matches))
         #
         self.writtenIds.add(mf.curie)
         #
-        blat_seqids = SPACE.join(seqids or [])
-        db_seqids = SPACE.join(self.mgi2seqids.get(mf.curie, []))
+        blat_seqids = SPACE.join(alignData or [])
+        # 
+        # Only show the database seqids that were NOT used in the blat model
+        db_seqids = filter(lambda s: s not in alignSeqIds, self.mgi2seqids.get(mf.curie, []))
+        db_seqids = SPACE.join(db_seqids)
+        #
         cf = self.mgi2current.get(mf.curie, None) # current coordinates
+        ccoords = "" if not cf else "%s:%s..%s (%s)" % (cf.seqid, cf.start, cf.end, cf.strand)
         if cf is None:
             xtra = [
               "added",
+              mf.Name,
+              ccoords,
               blat_seqids,
               db_seqids,
             ]
-        elif seqids is None:
+        elif matches0 is None:
             xtra = [
               "deleted",
+              mf.Name,
+              ccoords,
               blat_seqids,
               db_seqids,
-              cf.seqid,
-              str(cf.start),
-              str(cf.end),
-              str(cf.strand)
             ]
         elif mf.seqid != cf.seqid or mf.start != cf.start or mf.end != cf.end or mf.strand != cf.strand:
             xtra = [
               "changed",
+              mf.Name,
+              ccoords,
               blat_seqids,
               db_seqids,
-              cf.seqid,
-              str(cf.start),
-              str(cf.end),
-              str(cf.strand)
             ]
         else:
-            xtra = [ "unchanged" ]
+            xtra = [
+              "unchanged",
+              mf.Name,
+              ccoords,
+              blat_seqids,
+              db_seqids
+            ]
 
         ###
         c4amRec = [
