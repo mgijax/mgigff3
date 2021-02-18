@@ -5,7 +5,7 @@
 # Simple library for querying the MGI ad hoc database.
 # By default, queries the public adhoc database using public login credentials.
 # You can change the default connection parameters by any of the following methods:
-# (1) Set environment variables: MGI_HOST, MGI_DATAGBASE, MGI_USER, MGI_PASSWORD.
+# (1) Set environment variables: MGI_HOST, MGI_DATABASE, MGI_USER, MGI_PASSWORD.
 # (2) Set module global variables: HOST, DATABASE, USER,  PASSWORD.
 # (3) Create a connection and pass it to the sql() call.
 #
