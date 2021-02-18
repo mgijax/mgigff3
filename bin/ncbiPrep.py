@@ -27,6 +27,7 @@ HASH    = '#'
 # May need to update this set when there is a new NCBI data release.
 #
 EXCLUDE_TYPES = set([
+  "centromere",
   "D_loop",
   "cDNA_match",
   "enhancer",
