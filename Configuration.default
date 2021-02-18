@@ -22,7 +22,7 @@ else
 fi
 
 # ---------------------
-export MOUSE_ASSEMBLY="GRCm38"
+export MOUSE_ASSEMBLY="GRCm39"
 # ---------------------
 export MGI_HOST="${MGD_DBSERVER}"
 export MGI_DATABASE="${MGD_DBNAME}"
@@ -79,17 +79,19 @@ export COUNTCMD="${PYTHON} ${BINDIR}/profileGff.py"
 
 # ---------------------
 #
-export NCBIver=108.20200622
-export NCBIbuild=GCF_000001635.26_GRCm38.p6
+export NCBIver=109
+export NCBIbuild=GCF_000001635.27_GRCm39
 export NCBIfile=${NCBIbuild}_genomic.gff
 export NCBIurl=https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Mus_musculus/annotation_releases/${NCBIver}/${NCBIbuild}/${NCBIfile}.gz
 export NCBIprep="${PYTHON} ${BINDIR}/ncbiPrep.py"
 #
 export MIRfile=mmu.gff3
-export MIRurl=ftp://mirbase.org/pub/mirbase/CURRENT/genomes/${MIRfile}
+#export MIRurl=ftp://mirbase.org/pub/mirbase/CURRENT/genomes/${MIRfile}
+# disable miRBase (or any other provider) by settings its URL to empty
+export MIRurl=
 export MIRprep="${PYTHON} ${BINDIR}/mirbasePrep.py"
 #
-export ENSEMBLver=101
+export ENSEMBLver=103
 export ENSEMBLbuild=${MOUSE_ASSEMBLY}
 export ENSEMBLfile=Mus_musculus.${ENSEMBLbuild}.${ENSEMBLver}.gff3
 export ENSEMBLurl=ftp://ftp.ensembl.org/pub/release-${ENSEMBLver}/gff3/mus_musculus/${ENSEMBLfile}.gz

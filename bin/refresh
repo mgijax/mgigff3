@@ -138,6 +138,10 @@ function refreshProvider {
     headerfile=${WORKINGDIR}/${provider}.header
     #
 
+    if [ "${url}" = "" ]; then
+        logit "Skipping provider ${provider} because URL is empty."
+        return
+    fi 
 
     logit "Downloading ${provider}: $url to $downloaded"
     if [ ${extension} = "gz" ]; then
