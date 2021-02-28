@@ -144,6 +144,10 @@ class ModelMerger:
         if m.seqid != f.seqid or m.strand != f.strand:
             self.log("Cannot merge because chromosomes or strands disagree.\n%s\n%s\n" % (str(m), str(f)))
             return m
+        if not m.overlaps(f):
+            self.log("Cannot merge because features do not overlap.\n%s\n%s\n" % (str(m), str(f)))
+            return m
+        #
         m.start = min(m.start, f.start)
         m.end   = max(m.end,   f.end)
         feats = gff3.copyModel(gff3.flattenModel(f))
@@ -219,7 +223,7 @@ class ModelMerger:
         #
         self.finalCheck()
 
-    #
+    # Log any features on the current chromosome in MGI that did not get output.
     def finalCheck (self) :
         chrFeats = filter(lambda f: f.seqid == self.seqid, self.mgiFeats)
         missingChrFeats = filter(lambda f: f.curie not in self.outputMgi, chrFeats)
