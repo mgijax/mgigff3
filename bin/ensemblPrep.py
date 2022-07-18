@@ -42,6 +42,8 @@ for m in gff3.models(feats):
         f.attributes.pop("ensembl_phase", None)
         if f.type == "CDS":
             f.Name = f.protein_id
+        elif f.type == "lnc_RNA":
+            f.type = "lncRNA"
         elif f.type == "miRNA" and len(f.children):
             # Ensembl miRNA models look ike this:
             #     gene -> miRNA -> exon

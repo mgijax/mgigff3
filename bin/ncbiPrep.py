@@ -129,6 +129,8 @@ class ConvertNCBI:
         #  
         if f[2] in EXCLUDE_TYPES:
           return None
+        elif f[2] == "lnc_RNA":
+          f[2] = "lncRNA"
         #
         xrs = f.attributes.get('Dbxref', [])
         if type(xrs) is str:

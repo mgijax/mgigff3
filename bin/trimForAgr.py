@@ -34,7 +34,7 @@ def processModel (m, soterm2id) :
             # - 3 levels
             # - only mRNA or transcript at middle level
             # - only exon or CDS at leaf
-            ttypes = ["transcript", "mRNA", "lnc_RNA", "pseudogenic_transcript", "unconfirmed_transcript"]
+            ttypes = ["transcript", "mRNA", "lncRNA", "pseudogenic_transcript", "unconfirmed_transcript"]
             ltypes = ["exon","CDS"]
         elif m.so_term_name == "miRNA_gene":
             # miRNA genes: restricted to gene->pre_miRNA->miRNA
