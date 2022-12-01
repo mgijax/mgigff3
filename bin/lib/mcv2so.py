@@ -8,7 +8,7 @@
 mcv2soData = [
     # ['MCV term', 'SO term', 'SO id']
     ['antisense lncRNA gene', 'antisense_lncRNA_gene', 'SO:0002182'],
-    ['bidirectional promoter lncRNA gene', 'bidirectional_promoter_lncRNA', 'SO:0002185'],
+    ['bidirectional promoter lncRNA gene', 'bidirectional_promoter_lncRNA_gene', 'SO:0002185'],
     ['gene', 'gene', 'SO:0000704'],
     ['gene segment', 'gene_segment', 'SO:3000000'],
     ['heritable phenotypic marker', 'heritable_phenotypic_marker','SO:0001500'],
