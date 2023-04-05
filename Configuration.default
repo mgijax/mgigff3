@@ -91,7 +91,7 @@ export MIRfile=mmu.gff3
 export MIRurl=
 export MIRprep="${PYTHON} ${BINDIR}/mirbasePrep.py"
 #
-export ENSEMBLver=107
+export ENSEMBLver=108
 export ENSEMBLbuild=${MOUSE_ASSEMBLY}
 export ENSEMBLfile=Mus_musculus.${ENSEMBLbuild}.${ENSEMBLver}.gff3
 export ENSEMBLurl=ftp://ftp.ensembl.org/pub/release-${ENSEMBLver}/gff3/mus_musculus/${ENSEMBLfile}.gz
