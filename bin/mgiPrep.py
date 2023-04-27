@@ -32,6 +32,7 @@ mgiGenes = '''
     mt.name as markertype,
     mmc.term as mcvtype,
     mlc.chromosome,
+    mlc.genomicchromosome,
     mlc.startcoordinate,
     mlc.endcoordinate,
     mlc.strand
@@ -81,53 +82,59 @@ def main () :
       ix.setdefault(rec['mgiid'],[]).append(xref)
     # Read all MGI genes and pseudogenes, and convert them to GFF3.
     for rec in db.sql(mgiGenes):
-      mgiid = rec['accid']
-      if not mgiid in ix:
-        # only want things with model ids
-        continue
-      symbol = rec['symbol']
-      name = rec['name']
-      chr = rec['chromosome']
-      start = '.' if rec['startcoordinate'] is None else int(rec['startcoordinate'])
-      end   = '.' if rec['endcoordinate']   is None else int(rec['endcoordinate'])
-      strand = rec['strand']
-      if strand is None:
-        sys.stderr.write("null strand: " + str(rec) + "\n")
-        strand = '.'
-      markertype = rec['markertype']
-      mcvtype = rec['mcvtype']
-      so_term_name = mcv2so.mcv2so[mcvtype]
-      attrs = dict([
-        # mint a B6 strain-specific ID from the MGI ID
-        ['ID', 'MGI_C57BL6J_' + mgiid[4:]],
-        # by convention, GFF3 Name attr is what a browser displays
-        ['Name', symbol],
-        # also by convention, GFF3 description attr used for "long" names
-        ['description', name.replace(';',',')],
-        # convention
-        ['gene_id', mgiid],
-        # for the Alliance
-        ['curie', mgiid],
-        # list the model ids
-        ['Dbxref', ix[mgiid]],
-        # what MGI calls it
-        ['mgi_type', mcvtype],
-        # a bona fide SO term corresponding to mgi_type
-        # Throw an error if there is no mapping for this MCV term.
-        ['so_term_name', so_term_name]
-      ])
-      gffrec = [
-        chr,
-        'MGI',
-        markertype.lower(),
-        str(start),
-        str(end),
-        '.',
-        strand,
-        '.',
-        gff3.formatColumn9(attrs)
-      ]
-      print('\t'.join(gffrec))
+      try:
+          mgiid = rec['accid']
+          if not mgiid in ix:
+            # only want things with model ids
+            continue
+          symbol = rec['symbol']
+          name = rec['name']
+          chr = rec['genomicchromosome'] if rec['genomicchromosome'] else rec['chromosome']
+          start = '.' if rec['startcoordinate'] is None else int(rec['startcoordinate'])
+          end   = '.' if rec['endcoordinate']   is None else int(rec['endcoordinate'])
+          strand = rec['strand']
+          if strand is None:
+            sys.stderr.write("null strand: " + str(rec) + "\n")
+            strand = '.'
+          markertype = rec['markertype']
+          mcvtype = rec['mcvtype']
+          so_term_name = mcv2so.mcv2so[mcvtype]
+          attrs = dict([
+            # mint a B6 strain-specific ID from the MGI ID
+            ['ID', 'MGI_C57BL6J_' + mgiid[4:]],
+            # by convention, GFF3 Name attr is what a browser displays
+            ['Name', symbol],
+            # also by convention, GFF3 description attr used for "long" names
+            ['description', name.replace(';',',')],
+            # convention
+            ['gene_id', mgiid],
+            # for the Alliance
+            ['curie', mgiid],
+            # list the model ids
+            ['Dbxref', ix[mgiid]],
+            # what MGI calls it
+            ['mgi_type', mcvtype],
+            # a bona fide SO term corresponding to mgi_type
+            # Throw an error if there is no mapping for this MCV term.
+            ['so_term_name', so_term_name]
+          ])
+          gffrec = [
+            chr,
+            'MGI',
+            markertype.lower(),
+            str(start),
+            str(end),
+            '.',
+            strand,
+            '.',
+            gff3.formatColumn9(attrs)
+          ]
+          print('\t'.join(gffrec))
+      except:
+        print ("ERROR:")
+        print (str(rec))
+        sys.exit(1)
+
 
 ####
 #

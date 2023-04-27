@@ -3,9 +3,12 @@
 #
 # Merges models into the MGI gene.
 # 
-#       $ python merge.py file1 file2 [file3 ...]
+#       $ python merge.py mgifile providerfile1 [providerfile2 ...]
 #
-# The files must contain data for a single chromosome (and all must be the same chromosome!)
+# First file must be the file output by mgiPrep.py
+#
+# Provider files must contain data for a single chromosome (and all must be the same chromosome!)
+#
 # Example:
 #       $ python merge.py ../working/mgi.chr14.gff ../working/ncbi.chr14.gff > test.gff
 # Each file must be sorted appropriately. Model features clustered, no forward Parent references, etc,
@@ -174,8 +177,9 @@ class ModelMerger:
     #      in window for MGI gene + model m.
     #
     def processNext(self, m):
-        gs  = self.id2mgiFeat.get(m.curie, None)
-        if gs is None:
+        gs  = self.id2mgiFeat.get(m.curie, [])
+        gs = list(filter(lambda g: g.seqid == m.seqid, gs))
+        if len(gs) == 0:
             self.log("Orphan model: %s \n" % str(m.curie))
             return
         for g in gs:
