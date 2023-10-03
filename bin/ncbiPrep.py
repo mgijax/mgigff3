@@ -1,5 +1,5 @@
 #
-# convertNCBI.py
+# ncbiPrep.py
 #
 # Filters/tweaks the NCBI file.
 # * converts column 1 values from sequence ids to chromosome (or contig) ids.
@@ -9,7 +9,7 @@
 # * removes "unwanted" attributes
 #
 # Usage:
-#  python convertNCBI.py < /path/to/ncbidatafile.gff3 > output.gff3
+#  python ncbiPrep.py < /path/to/ncbidatafile.gff3 > output.gff3
 # 
 # 
 # 
@@ -270,12 +270,21 @@ class ConvertNCBI:
                 f.Derives_from = [ pid ]
             elif f.type == 'primary_transcript':
                 f.type = 'pre_miRNA'
+
+    # 
+    def noDirectExonChildren(self, m):
+        for c in list(m.children):
+            if c.type == "exon":
+                self.log("Removing exon direct child: " + str(c))
+                m.children.remove(c)
+
     #
     def main(self):
         for m in gff3.models(self.pre(sys.stdin)):
            self.checkMiRnas(m)
            self.checkPseudogene(m)
            self.checkTranscriptNames(m)
+           self.noDirectExonChildren(m)
            for f in gff3.flattenModel(m):
                print(str(f), end='')
 
