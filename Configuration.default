@@ -79,11 +79,10 @@ export COUNTCMD="${PYTHON} ${BINDIR}/profileGff.py"
 
 # ---------------------
 #
-export NCBIver=current
+export NCBIver=GCF_000001635.27-RS_2023_04
 export NCBIbuild=GCF_000001635.27_GRCm39
 export NCBIfile=${NCBIbuild}_genomic.gff
-#export NCBIurl=https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Mus_musculus/annotation_releases/${NCBIver}/${NCBIbuild}/${NCBIfile}.gz
-export NCBIurl=https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Mus_musculus/annotation_releases/current/GCF_000001635.27-RS_2023_04/GCF_000001635.27_GRCm39_genomic.gff.gz
+export NCBIurl=https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Mus_musculus/annotation_releases/${NCBIver}/${NCBIbuild}_genomic.gff.gz
 export NCBIprep="${PYTHON} ${BINDIR}/ncbiPrep.py"
 #
 export MIRfile=mmu.gff3
@@ -92,7 +91,7 @@ export MIRfile=mmu.gff3
 export MIRurl=
 export MIRprep="${PYTHON} ${BINDIR}/mirbasePrep.py"
 #
-export ENSEMBLver=108
+export ENSEMBLver=111
 export ENSEMBLbuild=${MOUSE_ASSEMBLY}
 export ENSEMBLfile=Mus_musculus.${ENSEMBLbuild}.${ENSEMBLver}.gff3
 export ENSEMBLurl=ftp://ftp.ensembl.org/pub/release-${ENSEMBLver}/gff3/mus_musculus/${ENSEMBLfile}.gz
