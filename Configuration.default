@@ -39,7 +39,6 @@ export BLAT_C4AM_COL7="MGI"
 export CURL=curl
 export CP=cp
 export GUNZIP=gunzip
-export GZIP=gzip
 export GREP=grep
 export SORT=sort
 export MKDIR=mkdir
