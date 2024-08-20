@@ -78,7 +78,7 @@ export COUNTCMD="${PYTHON} ${BINDIR}/profileGff.py"
 
 # ---------------------
 #
-export NCBIver=GCF_000001635.27-RS_2023_04
+export NCBIver=GCF_000001635.27-RS_2024_02
 export NCBIbuild=GCF_000001635.27_GRCm39
 export NCBIfile=${NCBIbuild}_genomic.gff
 export NCBIurl=https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Mus_musculus/annotation_releases/${NCBIver}/${NCBIbuild}_genomic.gff.gz
