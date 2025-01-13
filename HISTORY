@@ -1,0 +1,8 @@
+TAG: genemodelload-6-0-25-1
+DATE: 01/13/2025
+STAFF: lec
+CHANGES: 
+wts2-1591/e4g-93/ENSEMBL gene 113
+#        modified:   Configuration.default
+Configuration.default:export ENSEMBLver=113
+
