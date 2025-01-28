@@ -7,7 +7,7 @@ import gff3
 import time
 
 ###
-# Loads a tab-delimited file of SO its and terms.
+# Loads a tab-delimited file of SO ids and terms.
 # Returns a mapping from term to id
 #
 def loadSOTerms () :
@@ -85,6 +85,15 @@ def processModel (m, soterm2id) :
                 except KeyError:
                     log("KeyError (%s) for transcript: %s" % (sys.exc_info()[1],str(t)))
                     m.children.remove(t)
+        #
+        for t in list(m.children) :
+            if t.type == "miRNA":
+                continue
+            newtid = (m.attributes["curie"] + "_" + t.attributes["curie"]).replace(":","_")
+            t.attributes["ID"] = newtid
+            for e in list(t.children) :
+                e.attributes["Parent"] = newtid
+
         #
         for f in gff3.flattenModel2(m):
             sys.stdout.write(str(f))
