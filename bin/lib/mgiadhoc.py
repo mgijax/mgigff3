@@ -17,8 +17,8 @@ import psycopg2
 import psycopg2.extras
 
 # Default connection parameters
-HOST     = os.environ.get("MGI_HOST",     "mgi-adhoc.jax.org")
-DATABASE = os.environ.get("MGI_DATABASE", "mgd")
+HOST     = os.environ.get("MGI_HOST")
+DATABASE = os.environ.get("MGI_DATABASE")
 USER     = os.environ.get("MGI_USER",     "mgd_public")
 PASSWORD = os.environ.get("MGI_PASSWORD", "mgdpub")
 

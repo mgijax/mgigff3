@@ -8,6 +8,7 @@ then
 fi
 source ${MGICONFIG}/master.config.sh
 #
+export DIR=`pwd`
 export BINDIR=${DIR}/bin
 export DEV_INSTALL="false"
 
