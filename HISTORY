@@ -1,3 +1,9 @@
+TAG: mgigff3-6-0-25-2
+DATE: 01/28/2025
+STAFF: jer
+CHANGES: 
+e4g-124 Stop using mgi-adhoc as a fallback.
+
 TAG: mgigff3-6-0-25-1
 DATE: 01/13/2025
 STAFF: lec
