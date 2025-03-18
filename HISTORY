@@ -1,3 +1,9 @@
+TAG: mgigff3-6-0-25-3
+DATE: 03/18/2025
+STAFF: jer
+CHANGES: 
+Bugfix: Propagate ID changes (see d02a6003ae652dc51e96619920fe5469da66a4a1) to Derives_from siblings.
+
 TAG: mgigff3-6-0-25-2
 DATE: 01/28/2025
 STAFF: jer

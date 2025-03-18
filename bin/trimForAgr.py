@@ -86,14 +86,20 @@ def processModel (m, soterm2id) :
                     log("KeyError (%s) for transcript: %s" % (sys.exc_info()[1],str(t)))
                     m.children.remove(t)
         #
+        id_map = {}
         for t in list(m.children) :
             if t.type == "miRNA":
                 continue
             newtid = (m.attributes["curie"] + "_" + t.attributes["curie"]).replace(":","_")
+            id_map[t.attributes["ID"]] = newtid
             t.attributes["ID"] = newtid
             for e in list(t.children) :
                 e.attributes["Parent"] = newtid
 
+        for t in list(m.children) :
+            derives = t.attributes.get("Derives_from", "")
+            if len(derives) > 0:
+                t.attributes["Derives_from"] = id_map.get(derives,derives)
         #
         for f in gff3.flattenModel2(m):
             sys.stdout.write(str(f))
