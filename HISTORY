@@ -1,3 +1,10 @@
+TAG: mgigff3-6-0-25-4
+DATE: 06/23/2025
+STAFF: lec
+CHANGES: 
+wts2-1669/e4g-296/mgigff3 Python 3.12
+        modified:   bin/lib/OrderedSet.py
+
 TAG: mgigff3-6-0-25-3
 DATE: 03/18/2025
 STAFF: jer
