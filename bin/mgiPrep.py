@@ -13,6 +13,7 @@
 #
 
 import sys
+import re
 from lib import mgiadhoc as db
 from lib import gff3
 from lib import mcv2so
@@ -26,6 +27,7 @@ ldbkey2prefix = {
 
 mgiGenes = '''
   select 
+    mm._marker_key,
     aa.accid, 
     mm.symbol,
     mm.name,
@@ -74,16 +76,42 @@ mgiModelIds = '''
     and aa2.preferred = 1
 ''' % geneModelLdbKeys
 
+# returns regulates/regulated_by relationships (WTS2-1756/SPRT-128)
+mgiRegulates = '''
+    select m2._marker_key, m2.symbol, m1.symbol as regulator, c.pubmedid, c.mgiid
+    from MGI_Relationship r, MRK_Marker m1, MRK_Marker m2, BIB_Citation_Cache c
+    where r._category_key = 1013
+    and r._object_key_1 = m1._marker_key
+    and r._object_key_2 = m2._marker_key
+    and r._refs_key = c._refs_key
+'''
+
+SA_re = re.compile(r'(\d+)')
+def smartAlphaKey (a) :
+    key = []
+    for ap in SA_re.split(a):
+        if ap.isdigit():
+            ap = int(ap)
+        key.append(ap)
+    return key
+
 def main () :
     # Read the MGI/model id pairs. Build index from MGI id -> list of model ids
     ix = {}
     for rec in db.sql(mgiModelIds):
-      xref = ldbkey2prefix[rec['_logicaldb_key']] + ':' + rec['modelid']
-      ix.setdefault(rec['mgiid'],[]).append(xref)
+        xref = ldbkey2prefix[rec['_logicaldb_key']] + ':' + rec['modelid']
+        ix.setdefault(rec['mgiid'],[]).append(xref)
+    #
+    rx = {}
+    for rec in db.sql(mgiRegulates):
+        refid = ('PMID:'+rec['pubmedid']) if rec['pubmedid'] else rec['mgiid']
+        t = rec['regulator'] + '[Ref_ID:' + refid + ']'
+        rx.setdefault(rec['_marker_key'],[]).append(t)
     # Read all MGI genes and pseudogenes, and convert them to GFF3.
     for rec in db.sql(mgiGenes):
       try:
           mgiid = rec['accid']
+          mkey = rec['_marker_key']
           if not mgiid in ix:
             # only want things with model ids
             continue
@@ -99,7 +127,7 @@ def main () :
           markertype = rec['markertype']
           mcvtype = rec['mcvtype']
           so_term_name = mcv2so.mcv2so[mcvtype]
-          attrs = dict([
+          attrs = [
             # mint a B6 strain-specific ID from the MGI ID
             ['ID', 'MGI_C57BL6J_' + mgiid[4:]],
             # by convention, GFF3 Name attr is what a browser displays
@@ -116,8 +144,11 @@ def main () :
             ['mgi_type', mcvtype],
             # a bona fide SO term corresponding to mgi_type
             # Throw an error if there is no mapping for this MCV term.
-            ['so_term_name', so_term_name]
-          ])
+            ['so_term_name', so_term_name],
+          ]
+          if mkey in rx:
+            attrs.append(['Regulated_by', sorted(rx[mkey], key=smartAlphaKey)])
+          #
           gffrec = [
             chr,
             'MGI',
@@ -127,7 +158,7 @@ def main () :
             '.',
             strand,
             '.',
-            gff3.formatColumn9(attrs)
+            gff3.formatColumn9(dict(attrs))
           ]
           print('\t'.join(gffrec))
       except:
