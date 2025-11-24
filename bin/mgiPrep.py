@@ -78,7 +78,7 @@ mgiModelIds = '''
 
 # returns regulates/regulated_by relationships (WTS2-1756/SPRT-128)
 mgiRegulates = '''
-    select m2._marker_key, m2.symbol, m1.symbol as regulator, c.pubmedid, c.mgiid
+    select distinct m2._marker_key, m2.symbol, m1.symbol as regulator, c.pubmedid, c.mgiid
     from MGI_Relationship r, MRK_Marker m1, MRK_Marker m2, BIB_Citation_Cache c
     where r._category_key = 1013
     and r._object_key_1 = m1._marker_key
